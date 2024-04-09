@@ -1,5 +1,6 @@
 #include "pipeline.h"
 
+//fixed
 
 void pipeline_t::squash_complete(reg_t jump_PC) {
 	unsigned int i, j;
@@ -36,10 +37,14 @@ void pipeline_t::squash_complete(reg_t jump_PC) {
         // FIX_ME #17c
         // Squash the renamer.
         //
-
+		
+		//********************************************
         // FIX_ME #17c BEGIN
-		REN->squash();
+		//********************************************
+		REN->squash(); 
+		//******************************************** 
         // FIX_ME #17c END
+		//********************************************
 
 
 	//////////////////////////

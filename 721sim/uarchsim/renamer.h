@@ -11,16 +11,16 @@ private:
 	// Entry contains: physical register mapping
 	/////////////////////////////////////////////////////////////////////
 
-    uint64_t* RMT;   
+    uint64_t *rename_map_table; 
 
 	/////////////////////////////////////////////////////////////////////
 	// Structure 2: Architectural Map Table
 	// Entry contains: physical register mapping
 	/////////////////////////////////////////////////////////////////////
 
-    uint64_t* AMT;
+    uint64_t *architectural_map_table;
+    uint64_t rmt_amt_size; 
 
-	uint64_t totalLogicalRegisters;
 	/////////////////////////////////////////////////////////////////////
 	// Structure 3: Free List
 	//
@@ -30,12 +30,14 @@ private:
 	// * Structure includes head, tail, and their phase bits.
 	/////////////////////////////////////////////////////////////////////
 
-    uint64_t*    		freeList;
-    int     		freeListTail;
-    int     		freeListHead;
-    bool       freeListHeadPhase;
-    bool       freeListTailPhase;
-	uint64_t 		freeListSize;
+    struct FreeList{
+        uint64_t head, tail;        //keeps track of the head and tail of the free list
+        uint64_t head_phase_bit, tail_phase_bit;    //phase bits 
+        uint64_t *list; //represents an array of all physical registers that are free and can be allocated 
+        uint64_t size;  //size of the free list --> physical registers - architectural registers 
+    };
+
+    FreeList freelist; 
 
 	/////////////////////////////////////////////////////////////////////
 	// Structure 4: Active List
@@ -76,29 +78,32 @@ private:
 	// * Structure includes head, tail, and their phase bits.
 	/////////////////////////////////////////////////////////////////////
 
-    struct activeList {
-        bool    		destFlag;
-        uint64_t     	destLogicalRegisterNumber;
-        uint64_t     	destPhysicalRegisterNumber;
-        bool    		complete;
-        bool    		exception;
-        bool    		loadViolation;
-        bool    		branchMisprediction;
-        bool    		valueMisprediction;
-        bool    		loadFlag;
-        bool    		storeFlag;
-        bool    		branchFlag;
-        bool    		amoFlag;
-        bool    		csrFlag;
-        uint64_t     	pc;
+
+    struct ActiveListEntry {
+        bool dest_existence; // Does the instruction has a destination register
+        uint64_t logical_dest; // Logical register number of the instruction's destination
+        uint64_t physical_dest; // Physical register number of the instruction's destination
+        bool completed; // Did the instruction complete execution
+        bool exception; // Did the instruction cause an exception
+        bool load_violation; // Did a younger load issue before an older conflicting store
+        bool branch_mispredict; // Whether there was a branch misprediction
+        bool value_mispredict; // Whether there was a value misprediction
+        bool load; // Whether the instruction is a load
+        bool store; // Whether the instruction is a store
+        bool branch; // Whether the instruction is a branch
+        bool amo; // Whether the instruction is an atomic memory operation
+        bool csr; // Whether the instruction is a system instruction
+        uint64_t pc; // Program counter of the instruction
     };
 
-    activeList*              AL;
-    int     activeListHead     ;
-    int     activeListTail     ;
-    bool    activeListHeadPhase;
-    bool    activeListTailPhase;
-	uint64_t 	 activeListSize;
+    struct ActiveList {
+        uint64_t head, tail;
+        uint64_t head_phase_bit, tail_phase_bit;
+		ActiveListEntry *list; 
+        uint64_t size; // size of the active list
+    };
+
+    ActiveList activeList;
 
 	/////////////////////////////////////////////////////////////////////
 	// Structure 5: Physical Register File
@@ -109,16 +114,15 @@ private:
 	//   (#include <inttypes.h>, already at top of this file)
 	/////////////////////////////////////////////////////////////////////
 
-    uint64_t* PRF;
+    uint64_t *physical_register_file;
 
 	/////////////////////////////////////////////////////////////////////
 	// Structure 6: Physical Register File Ready Bit Array
 	// Entry contains: ready bit
 	/////////////////////////////////////////////////////////////////////
 
-    bool* readyBitArray;
-
-	uint64_t totalPhysicalRegisters;
+    uint64_t *prf_ready_bit; 
+    uint64_t prf_size;          //Physical registers available for storing values
 
 	/////////////////////////////////////////////////////////////////////
 	// Structure 7: Global Branch Mask (GBM)
@@ -168,44 +172,32 @@ private:
 	// 3. checkpointed GBM
 	/////////////////////////////////////////////////////////////////////
 
-    struct branchCheckpoint {
-        uint64_t*   shadowMapTable;
-        int         freeListHead;
-        bool        freeListHeadPhase;
-        uint64_t    checkpointedGBM;
+    struct BranchCheckpoint {
+       uint64_t *shadowMapTable;
+       uint64_t head; 
+       uint64_t head_phase_bit;
+       uint64_t checkpointedGBM;
     };
 
-    branchCheckpoint* stateCheckpoint;
-	uint64_t numberOfCheckpoints;
+    uint64_t smt_size;          //is equal to the number of entries in the rename map table
+    uint64_t total_checkpoints;     //checkpoints that can stored at a given time 
+
+    BranchCheckpoint *branchCheckpoint; 
 
 	/////////////////////////////////////////////////////////////////////
 	// Private functions.
 	// e.g., a generic function to copy state from one map to another.
 	/////////////////////////////////////////////////////////////////////
 
-	void initialize();
+	void update_rename_map_table(uint64_t logical_register, uint64_t physical_register); //updates the mapping of a logical to a physical register in the rename map table
+	bool freelist_empty(); 
+	bool freelist_full(); 
+	void store_checkpoint(uint64_t branchID); 
+	bool activelist_empty(); 
+	bool activelist_full(); 
+	void activelist_initalize(ActiveListEntry *entry);
+	void checkpoint_initalize(BranchCheckpoint *point);
 
-    /////////////////////////////////////////////////////////////////////
-    // Functions regarding the Free List
-    /////////////////////////////////////////////////////////////////////
-
-    int 	freeListAvailability();
-    bool 	isFreeListEmpty();
-    bool 	isFreeListFull();
-    void 	pushOntoFreeList(int phyDest);
-	void 	restoreFreeList();
-
-    /////////////////////////////////////////////////////////////////////
-    // Functions regarding the Active List
-    /////////////////////////////////////////////////////////////////////
-
-    void 	initializeActiveList();
-    int 	activeListAvailability();
-    bool 	isActiveListEmpty();
-    bool 	isActiveListFull();
-    int 	obtainActiveListIndex();
-    void	retireFromActiveList();
-    void 	flushActiveList();
 
 public:
 	////////////////////////////////////////
@@ -230,13 +222,10 @@ public:
 	// Then, initialize the data structures based on the knowledge
 	// that the pipeline is intially empty (no in-flight instructions yet).
 	/////////////////////////////////////////////////////////////////////
-
 	renamer(uint64_t n_log_regs,
 		uint64_t n_phys_regs,
 		uint64_t n_branches,
 		uint64_t n_active);
-	
-	void printPRF();
 
 	/////////////////////////////////////////////////////////////////////
 	// This is the destructor, used to clean up memory space and
@@ -244,7 +233,7 @@ public:
 	// I typically don't use a destructor; you have the option to keep
 	// this function empty.
 	/////////////////////////////////////////////////////////////////////
-	//~renamer();
+	~renamer();
 
 
 	//////////////////////////////////////////

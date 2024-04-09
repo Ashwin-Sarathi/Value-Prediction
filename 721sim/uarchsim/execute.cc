@@ -1,6 +1,7 @@
 #include "pipeline.h"
 #include "trap.h"
 
+//fixed
 
 void pipeline_t::execute(unsigned int lane_number) {
    unsigned int index;
@@ -71,13 +72,21 @@ void pipeline_t::execute(unsigned int lane_number) {
 	    // that the instruction does not have a destination register. You don't have to decode the instruction, rather, just
 	    // check the existence (validity) of a destination register.
 
+            //********************************************
             // FIX_ME #13 BEGIN
-            if (hit && PAY.buf[index].C_valid) {
-               IQ.wakeup(PAY.buf[index].C_phys_reg);
-               REN->set_ready(PAY.buf[index].C_phys_reg);
-               REN->write(PAY.buf[index].C_phys_reg, PAY.buf[index].C_value.dw);
+            //********************************************
+            
+            //use the write function from the renamer to write a value into a physical register. Input: Physical register & value(which is the doubleword here)
+            if (PAY.buf[index].C_valid && hit){
+                IQ.wakeup(PAY.buf[index].C_phys_reg);
+                REN->set_ready(PAY.buf[index].C_phys_reg);
+                REN->write(PAY.buf[index].C_phys_reg, PAY.buf[index].C_value.dw);
             }
+
+            //********************************************
             // FIX_ME #13 END
+            //********************************************
+
          }
          else {
             // Instruction is a store
@@ -137,11 +146,19 @@ void pipeline_t::execute(unsigned int lane_number) {
 	 // (*footnote) Conditional branches execute in the same lanes as simple ALU instructions, and they don't have destination registers.
 	 // You don't have to decode the instruction, rather, just check the existence (validity) of a destination register.
 
+         //********************************************
          // FIX_ME #14 BEGIN
-         if (PAY.buf[index].C_valid) {
+         //********************************************
+
+         //check for the C register 
+         //write the doubleword using the write function from the renamer class 
+         if (PAY.buf[index].C_valid){
             REN->write(PAY.buf[index].C_phys_reg, PAY.buf[index].C_value.dw);
          }
+
+         //********************************************
          // FIX_ME #14 END
+         //********************************************
       }
 
       ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -174,17 +191,17 @@ void pipeline_t::execute(unsigned int lane_number) {
       // "depth-1" corresponds to instruction in second-to-last sub-stage.
       
       if (Execution_Lanes[lane_number].ex[depth-1].valid) {
-	      index = Execution_Lanes[lane_number].ex[depth-1].index;
+	 index = Execution_Lanes[lane_number].ex[depth-1].index;
          // FIX_ME #11b
          //
          // The check, above, indicates that there is a valid instruction in the
          // second-to-last sub-stage, which is the equivalent of the Register Read stage
-	      // in the case of a single-cycle producer -- in terms of wakeup timing.
+	 // in the case of a single-cycle producer -- in terms of wakeup timing.
          //
          // If the "depth-1" instruction has a destination register AND it is not a load AND it is not an AMO instruction:
          // (1) Broadcast its destination tag to the IQ to wakeup its dependent instructions.
          // (2) Set the corresponding ready bit in the Physical Register File Ready Bit Array.
-	      //
+	 //
          // Tips:
          // 1. At this point of the code, 'index' is the instruction's index into PAY.buf[] (payload).
          // 2. The easiest way to tell if this instruction is a load or not, is to test the instruction's
@@ -195,12 +212,22 @@ void pipeline_t::execute(unsigned int lane_number) {
          //       to the wakeup port).
          //    b. Set the destination register's ready bit.
 
+         //********************************************
 	      // FIX_ME #11b BEGIN
-         if (PAY.buf[index].C_valid && !(IS_LOAD(PAY.buf[index].flags)) && !(IS_AMO(PAY.buf[index].flags))) {
+         //********************************************
+
+         bool check = PAY.buf[index].C_valid &&  
+                              !IS_LOAD(PAY.buf[index].flags) && 
+                              !IS_AMO(PAY.buf[index].flags);
+
+         if (check) {
             IQ.wakeup(PAY.buf[index].C_phys_reg);
             REN->set_ready(PAY.buf[index].C_phys_reg);
          }
+
+         //********************************************
          // FIX_ME #11b END
+         //********************************************
       }
    }
 
@@ -251,12 +278,21 @@ void pipeline_t::load_replay() {
          // Tips:
          // 1. At this point of the code, 'index' is the instruction's index into PAY.buf[] (payload).
          // 2. See #13 (in execute.cc), and implement steps 3a,3b,3c.
-      
+
+         //********************************************
 	      // FIX_ME #18a BEGIN
+         //********************************************
+
+         //1.wakeup 
+         //2. set ready bit
+         //3. write doubleword value to physical register 
          IQ.wakeup(PAY.buf[index].C_phys_reg);
          REN->set_ready(PAY.buf[index].C_phys_reg);
-         REN->write(PAY.buf[index].C_phys_reg, value); 
+         REN->write(PAY.buf[index].C_phys_reg, PAY.buf[index].C_value.dw);
+
+         //********************************************
          // FIX_ME #18a END
+         //********************************************
       }
 
       // FIX_ME #18b
@@ -266,8 +302,15 @@ void pipeline_t::load_replay() {
       // 1. At this point of the code, 'index' is the instruction's index into PAY.buf[] (payload).
       // 2. Set the completed bit for this instruction in the Active List.
 
+      //********************************************
       // FIX_ME #18b BEGIN
-      REN->set_complete(PAY.buf[index].AL_index);
+      //********************************************
+
+      //set_complete function from the renamer class 
+      REN->set_complete(PAY.buf[index].AL_index); 
+      
+      //********************************************
       // FIX_ME #18b END
+      //********************************************
    }
 }

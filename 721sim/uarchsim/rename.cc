@@ -1,5 +1,6 @@
 #include "pipeline.h"
 
+//Has been fixed 
 
 ////////////////////////////////////////////////////////////////////////////////////
 // The Rename Stage has two sub-stages:
@@ -71,6 +72,7 @@ void pipeline_t::rename2() {
 
       index = RENAME2[i].index;
 
+      
       // FIX_ME #1
       // Count the number of instructions in the rename bundle that need a checkpoint (most branches).
       // Count the number of instructions in the rename bundle that have a destination register.
@@ -84,16 +86,22 @@ void pipeline_t::rename2() {
       // 3. The instruction's payload has all the information you need to count resource needs.
       //    There is a flag in the instruction's payload that *directly* tells you if this instruction needs a checkpoint.
       //    Another field indicates whether or not the instruction has a destination register.
-
+      
+      //********************************************
       // FIX_ME #1 BEGIN
-      if (PAY.buf[index].checkpoint) {
-         bundle_branch ++;
+      //********************************************
+
+      //Check for the existence of a destination register and checkpoints 
+      if(PAY.buf[index].C_valid){
+         bundle_dst++;
+      }
+      if(PAY.buf[index].checkpoint){
+         bundle_branch++; 
       }
 
-      if (PAY.buf[index].C_valid) {
-         bundle_dst ++;
-      }
+      //********************************************
       // FIX_ME #1 END
+      //********************************************
    }
 
    // FIX_ME #2
@@ -106,11 +114,22 @@ void pipeline_t::rename2() {
    // If there are enough resources for the *whole* rename bundle, then do not stall the Rename2 Stage.
    // This is achieved by doing nothing and proceeding to the next statements.
 
+   //********************************************
    // FIX_ME #2 BEGIN
-   if (REN->stall_reg(bundle_dst) || REN->stall_branch(bundle_branch)) {
-      return;
+   //********************************************
+
+   //calling the stall branch & stall_reg functions from the renamer class
+   //REN ---> register rename module
+   if(REN->stall_branch(bundle_branch)) {
+         return;
    }
+   if(REN->stall_reg(bundle_dst)) {
+         return;
+   }
+
+   //********************************************
    // FIX_ME #2 END
+   //********************************************
 
    //
    // Sufficient resources are available to rename the rename bundle.
@@ -134,25 +153,34 @@ void pipeline_t::rename2() {
       // 3. When you rename a logical register to a physical register, remember to *update* the instruction's payload with the physical register specifier,
       //    so that the physical register specifier can be used in subsequent pipeline stages.
 
+      //********************************************
       // FIX_ME #3 BEGIN
-      // Renaming source registers first
-      if (PAY.buf[index].A_valid) {
-         PAY.buf[index].A_phys_reg = REN->rename_rsrc(PAY.buf[index].A_log_reg);
+      //********************************************
+
+      //The source rgisters are A, B, D. Defined in payload.h
+      //Valid determines the existence of the register
+      //If true call the rename_rsrc function from the renamer class. Input: log_reg, the logical register to rename
+      //log_reg is the specifier of the source register 
+      if (PAY.buf[index].A_valid){
+        PAY.buf[index].A_phys_reg = REN->rename_rsrc(PAY.buf[index].A_log_reg);
+      }
+      if (PAY.buf[index].B_valid){
+        PAY.buf[index].B_phys_reg = REN->rename_rsrc(PAY.buf[index].B_log_reg);
+      }
+      if (PAY.buf[index].D_valid){
+        PAY.buf[index].D_phys_reg = REN->rename_rsrc(PAY.buf[index].D_log_reg);
       }
 
-      if (PAY.buf[index].B_valid) {
-         PAY.buf[index].B_phys_reg = REN->rename_rsrc(PAY.buf[index].B_log_reg);
-      }      
 
-      if (PAY.buf[index].D_valid) {
-         PAY.buf[index].D_phys_reg = REN->rename_rsrc(PAY.buf[index].D_log_reg);
+      //The destination register is C
+      //If valid, call rename_rdst function. Input: log_reg, the logical register to rename
+      if (PAY.buf[index].C_valid){
+        PAY.buf[index].C_phys_reg = REN->rename_rdst(PAY.buf[index].C_log_reg);
       }
 
-      // Renaming destination register 
-      if (PAY.buf[index].C_valid) {
-         PAY.buf[index].C_phys_reg = REN->rename_rdst(PAY.buf[index].C_log_reg);
-      }
+      //********************************************
       // FIX_ME #3 END
+      //********************************************
 
       // FIX_ME #4
       // Get the instruction's branch mask.
@@ -165,9 +193,16 @@ void pipeline_t::rename2() {
       //    to the DISPATCH[] pipeline register. The required left-hand side of the assignment statement is already provided for you below:
       //    RENAME2[i].branch_mask = ??;
 
+      //********************************************
       // FIX_ME #4 BEGIN
-      RENAME2[i].branch_mask = REN->get_branch_mask();
+      //********************************************
+
+      //branch mask function has been defined in the renamer class to get the branch mask for an instruction
+      RENAME2[i].branch_mask = REN->get_branch_mask(); 
+
+      //********************************************
       // FIX_ME #4 END
+      //********************************************
 
       // FIX_ME #5
       // If this instruction requires a checkpoint (most branches), then create a checkpoint.
@@ -177,12 +212,22 @@ void pipeline_t::rename2() {
       // 2. There is a flag in the instruction's payload that *directly* tells you if this instruction needs a checkpoint.
       // 3. If you create a checkpoint, remember to *update* the instruction's payload with its branch ID
       //    so that the branch ID can be used in subsequent pipeline stages.
-
+      
+      //********************************************
       // FIX_ME #5 BEGIN
-      if (PAY.buf[index].checkpoint) {
-         PAY.buf[index].branch_ID = REN->checkpoint();
+      //********************************************
+
+      //The flag that tells if a checkpoint is needed is the 'checkpoint'
+      //the checkpoint function in the renamer class creates a new checkpoint for a branch 
+      //The output of the function is the branch's ID
+      //Store the ID 
+      if (PAY.buf[index].checkpoint){
+        PAY.buf[index].branch_ID = REN->checkpoint();
       }
+
+      //********************************************
       // FIX_ME #5 END
+      //********************************************
    }
 
    //

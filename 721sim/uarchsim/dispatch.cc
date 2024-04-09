@@ -2,6 +2,7 @@
 #include "debug.h"
 #include "trap.h"
 
+//fixed 
 
 void pipeline_t::dispatch() {
    unsigned int i;
@@ -16,6 +17,11 @@ void pipeline_t::dispatch() {
    bool B_ready;
    bool D_ready;
    db_t* actual;
+
+   bool dest_valid;
+   uint64_t pay_PC;
+   uint64_t pay_log_reg;
+   uint64_t pay_phys_reg; 
 
    // Stall the Dispatch Stage if either:
    // (1) There isn't a dispatch bundle.
@@ -90,11 +96,20 @@ void pipeline_t::dispatch() {
    assert(i > 0);			// If we reached this point, there should be at least one instruction in the dispatch bundle.
    assert(i <= dispatch_width);		// There cannot be more than "dispatch_width" instructions in the dispatch bundle.
 
+   //********************************************
    // FIX_ME #6 BEGIN
-   if (REN->stall_dispatch(i)) {
-      return;
+   //********************************************
+
+   //The dispatch stall function from the renamer class stalls if there are not enough entries in the al
+   //Input: number of instructions in the current bundle --> i
+   //Output: true if there are AL does not have entries
+   if(REN->stall_dispatch(i)){
+         return; 
    }
+
+   //********************************************
    // FIX_ME #6 END
+   //********************************************
 
    //
    // Making it this far means we have all the required resources to dispatch the dispatch bundle.
@@ -137,17 +152,28 @@ void pipeline_t::dispatch() {
       // 3. When you dispatch the instruction into the Active List, remember to *update* the instruction's
       //    payload with its Active List index.
 
-      // FIX_ME #7 BEGIN 
-      // Setting flags
+      //********************************************
+      // FIX_ME #7 BEGIN
+      //********************************************
+
+      dest_valid = PAY.buf[index].C_valid;
+      pay_log_reg = PAY.buf[index].C_log_reg;
+      pay_phys_reg = PAY.buf[index].C_phys_reg;
       load_flag = IS_LOAD(PAY.buf[index].flags);
       store_flag = (IS_STORE(PAY.buf[index].flags) && (!PAY.buf[index].split_store || !PAY.buf[index].upper));
       branch_flag = IS_BRANCH(PAY.buf[index].flags);
       amo_flag = IS_AMO(PAY.buf[index].flags);
-      csr_flag = IS_CSR(PAY.buf[index].flags); 
-      
-      // Dispatching the instruction into IQ
-      PAY.buf[index].AL_index = REN->dispatch_inst(PAY.buf[index].C_valid, PAY.buf[index].C_log_reg, PAY.buf[index].C_phys_reg, load_flag, store_flag, branch_flag, amo_flag, csr_flag, PAY.buf[index].pc);
+      csr_flag = IS_CSR(PAY.buf[index].flags);
+      pay_PC = PAY.buf[index].pc; 
+
+      //Active list index needs to be updated 
+      //AL_index: index to the active list
+      //dispatch_inst function defined in the renamer class dispatches a single instruction in the active list 
+      PAY.buf[index].AL_index = REN->dispatch_inst(dest_valid, pay_log_reg, pay_phys_reg, load_flag, store_flag, branch_flag, amo_flag, csr_flag, pay_PC); 
+
+      //********************************************
       // FIX_ME #7 END
+      //********************************************
 
       // FIX_ME #8
       // Determine initial ready bits for the instruction's three source registers.
@@ -164,31 +190,20 @@ void pipeline_t::dispatch() {
       //    instruction does have a given source register, then you must consult the renamer module
       //    to determine whether or not the register is ready.
 
+      //********************************************
       // FIX_ME #8 BEGIN
-      //Checking readiness for source operand A
-      if (PAY.buf[index].A_valid) {
-         A_ready = REN->is_ready(PAY.buf[index].A_phys_reg);
-      }
-      else {
-         A_ready = true;
-      }
+      //********************************************
 
-      //Checking readiness for source operand B
-      if (PAY.buf[index].B_valid) {
-         B_ready = REN->is_ready(PAY.buf[index].B_phys_reg);
-      }
-      else {
-         B_ready = true;
-      }     
+      //Check if the source register is valid
+      //If true, the renamer module has a function is_ready that tests the ready bit of the physical register 
+      //If false, set to true 
+      A_ready = PAY.buf[index].A_valid ? REN->is_ready(PAY.buf[index].A_phys_reg) : true;
+      B_ready = PAY.buf[index].B_valid ? REN->is_ready(PAY.buf[index].B_phys_reg) : true;
+      D_ready = PAY.buf[index].D_valid ? REN->is_ready(PAY.buf[index].D_phys_reg) : true;
 
-      //Checking readiness for source operand D
-      if (PAY.buf[index].D_valid) {
-         D_ready = REN->is_ready(PAY.buf[index].D_phys_reg);
-      }
-      else {
-         D_ready = true;
-      } 
+      //********************************************
       // FIX_ME #8 END
+      //********************************************
 
       // FIX_ME #9
       // Clear the ready bit of the instruction's destination register.
@@ -203,11 +218,20 @@ void pipeline_t::dispatch() {
       // 1. At this point of the code, 'index' is the instruction's index into PAY.buf[] (payload).
       // 2. If the instruction has a destination register, then clear its ready bit; otherwise do nothing.
 
+      //********************************************
       // FIX_ME #9 BEGIN
-      if (PAY.buf[index].C_valid) {
-         REN->clear_ready(PAY.buf[index].C_phys_reg);
+      //********************************************
+
+      //Destination register: C
+      //Check if valid
+      //clear_ready function from the renamer class clears the ready bit of specfied physical register 
+      if(PAY.buf[index].C_valid){
+         REN->clear_ready(PAY.buf[index].C_phys_reg); 
       }
+
+      //********************************************
       // FIX_ME #9 END
+      //********************************************
 
       // FIX_ME #10
       // Dispatch the instruction into the Issue Queue, or circumvent the Issue Queue and immediately update status in the Active List.
@@ -238,9 +262,20 @@ void pipeline_t::dispatch() {
             //    * 'D_valid', 'D_ready', and 'D_tag': Valid bit, ready bit (calculated above), and physical register of third source register.
             // 3. As you can see in file pipeline.h, the IQ variable is the Issue Queue itself, NOT a pointer to it.
 
+            //********************************************
             // FIX_ME #10a BEGIN
-            IQ.dispatch(index, DISPATCH[i].branch_mask, PAY.buf[index].lane_id, PAY.buf[index].A_valid, A_ready, PAY.buf[index].A_phys_reg, PAY.buf[index].B_valid, B_ready, PAY.buf[index].B_phys_reg, PAY.buf[index].D_valid, D_ready, PAY.buf[index].D_phys_reg);
+            //********************************************
+
+            IQ.dispatch(index, DISPATCH[i].branch_mask, 
+                        PAY.buf[index].lane_id, 
+                        PAY.buf[index].A_valid, A_ready, PAY.buf[index].A_phys_reg,
+                        PAY.buf[index].B_valid, B_ready, PAY.buf[index].B_phys_reg,
+	                     PAY.buf[index].D_valid, D_ready, PAY.buf[index].D_phys_reg
+            );
+            
+            //********************************************
             // FIX_ME #10a END
+            //********************************************
 
             break;
 
@@ -254,16 +289,35 @@ void pipeline_t::dispatch() {
             // 1. At this point of the code, 'index' is the instruction's index into PAY.buf[] (payload).
 
             // *** FIX_ME #10b (part 1): Set completed bit in Active List.
+            
+            //********************************************
             // FIX_ME #10b1 BEGIN
-            REN->set_complete(PAY.buf[index].AL_index);
+            //********************************************
+
+            //Call the function set_complete from the renamer class 
+            //Input: Active list index 
+            REN->set_complete(PAY.buf[index].AL_index); 
+
+
+            //********************************************
             // FIX_ME #10b1 END
+            //********************************************
 
             // Check if any previous pipeline stage posted an exception.
             if (PAY.buf[index].trap.valid()) {
                // *** FIX_ME #10b (part 2): Set exception bit in Active List.
+               
+               //********************************************
                // FIX_ME #10b2 BEGIN
-               REN->set_exception(PAY.buf[index].AL_index);
+               //********************************************
+
+               //Call the function set_exception from the renamer class
+               //Input: Active list index 
+               REN->set_exception(PAY.buf[index].AL_index); 
+
+               //********************************************
                // FIX_ME #10b2 END
+               //********************************************
             }
             break;
 
