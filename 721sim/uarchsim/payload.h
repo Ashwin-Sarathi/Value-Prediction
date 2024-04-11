@@ -136,6 +136,11 @@ typedef struct {
    unsigned int C_log_reg;      // The logical register specifier of the
                                 // destination register.
 
+   //************************************************
+   //ADD predicted value to the destination register
+   //************************************************
+   uint64_t predicted_value;
+
    // ** SOURCE ** register D.
    // Floating-point multiply-accumulate uses a third source register.
    bool D_valid;                // If 'true', the instruction has a

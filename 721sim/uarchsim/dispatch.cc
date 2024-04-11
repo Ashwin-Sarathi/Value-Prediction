@@ -204,8 +204,42 @@ void pipeline_t::dispatch() {
       // 2. If the instruction has a destination register, then clear its ready bit; otherwise do nothing.
 
       // FIX_ME #9 BEGIN
+<<<<<<< Updated upstream
       if (PAY.buf[index].C_valid) {
          REN->clear_ready(PAY.buf[index].C_phys_reg);
+=======
+      //********************************************
+
+      //Destination register: C
+      //Check if valid
+      //clear_ready function from the renamer class clears the ready bit of specfied physical register 
+
+      // if(PAY.buf[index].C_valid){
+      //    REN->clear_ready(PAY.buf[index].C_phys_reg); 
+      // }
+
+   //*******************************************
+   //Check for predicted values 
+   //*******************************************
+
+      if (PAY.buf[index].C_valid) {
+         if (PAY.buf[index].predicted_value) {
+            // Write the predicted value into the physical register file.
+            REN->write(PAY.buf[index].C_phys_reg, PAY.buf[index].predicted_value);
+
+            // Set the ready bit of the predicted destination register.
+            REN->set_ready(PAY.buf[index].C_phys_reg);
+
+            // Send the predicted value with its producer instruction to the Issue Queue.
+            // Note: This is just a placeholder comment. The actual code to send the
+            //       predicted value to the issue queue will depend on your issue queue's implementation.
+            //       You need to ensure that the issue queue entry for this instruction has the
+            //       predicted value and knows that it is predicted.
+         } else {
+            // Clear the ready bit of non-predicted destination registers, like usual.
+            REN->clear_ready(PAY.buf[index].C_phys_reg);
+         }
+>>>>>>> Stashed changes
       }
       // FIX_ME #9 END
 
