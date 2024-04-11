@@ -46,12 +46,26 @@ void pipeline_t::register_read(unsigned int lane_number) {
 
       unsigned int lat = Execution_Lanes[lane_number].ex_depth;
 
+      //********************************************
       // FIX_ME #11a BEGIN
-      if ((PAY.buf[index].C_valid) && (lat == 1) && (!IS_LOAD(PAY.buf[index].flags)) && (!IS_AMO(PAY.buf[index].flags))) {
+      //********************************************
+
+      //check for all conditions 
+      bool valid_notLoad_notAMO = PAY.buf[index].C_valid && 
+                              (lat == 1) && 
+                              !IS_LOAD(PAY.buf[index].flags) && 
+                              !IS_AMO(PAY.buf[index].flags);
+
+      //Issue Queue class has a wakeup function that broadcast the tag to every entry in the issue queue
+      //ready bit of the destination register needs to be set using the function in the renamer class 
+      if (valid_notLoad_notAMO) {
          IQ.wakeup(PAY.buf[index].C_phys_reg);
          REN->set_ready(PAY.buf[index].C_phys_reg);
       }
+
+      //********************************************
       // FIX_ME #11a END
+      //********************************************
 
       //////////////////////////////////////////////////////////////////////////////////////////////////////////
       // FIX_ME #12
@@ -69,7 +83,13 @@ void pipeline_t::register_read(unsigned int lane_number) {
       //    payload.h regarding referencing a value as a single doubleword.
       //////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+      //********************************************
       // FIX_ME #12 BEGIN
+      //********************************************
+
+      //check if the source register is valid 
+      //Use the read function from the renamer class to read the contents of the physical register 
+      //Read the doubleword value 
       if (PAY.buf[index].A_valid) {
          PAY.buf[index].A_value.dw = REN->read(PAY.buf[index].A_phys_reg);
       }
@@ -81,7 +101,11 @@ void pipeline_t::register_read(unsigned int lane_number) {
       if (PAY.buf[index].D_valid) {
          PAY.buf[index].D_value.dw = REN->read(PAY.buf[index].D_phys_reg);
       }
+
+
+      //********************************************
       // FIX_ME #12 END
+      //********************************************
 
       //////////////////////////////////////////////////////////////////////////////////////////////////////////
       // Advance the instruction to the Execution Stage.

@@ -1,5 +1,7 @@
 #include "pipeline.h"
 
+//fixed
+
 
 void pipeline_t::writeback(unsigned int lane_number) {
    unsigned int index;
@@ -63,10 +65,17 @@ void pipeline_t::writeback(unsigned int lane_number) {
             // 3. Do NOT worry about clearing the branch's bit in the branch masks of instructions in the pipeline.
             //    This is unnecessary since instructions don't need accurate branch masks in perfect branch prediction
             //    mode... since they are never selectively squashed by branches anyway.
+      
+         //********************************************
+	      // FIX_ME #15a BEGIN
+         //********************************************
 
-	         // FIX_ME #15a BEGIN
-            REN->resolve(PAY.buf[index].AL_index, PAY.buf[index].branch_ID, true);
-	         // FIX_ME #15a END
+         REN->resolve(PAY.buf[index].AL_index, PAY.buf[index].branch_ID, true); 
+
+         //********************************************
+	      // FIX_ME #15a END
+         //********************************************
+
          }
          else if (PAY.buf[index].next_pc == PAY.buf[index].c_next_pc) {
             // Branch was predicted correctly.
@@ -85,11 +94,19 @@ void pipeline_t::writeback(unsigned int lane_number) {
             //    * resolve() takes two arguments. The first argument is the branch's ID. The second argument is a flag that
             //      indicates whether or not the branch was predicted correctly: in this case it is correct.
             //    * See pipeline.h for details about the two arguments of resolve().
+         
+         //********************************************
+         // FIX_ME #15b BEGIN
+         //********************************************
 
-	         // FIX_ME #15b BEGIN
-            REN->resolve(PAY.buf[index].AL_index, PAY.buf[index].branch_ID, true);
-            resolve(PAY.buf[index].branch_ID, true);
-	         // FIX_ME #15b END
+         REN->resolve(PAY.buf[index].AL_index, PAY.buf[index].branch_ID, true); 
+         resolve(PAY.buf[index].branch_ID, true); 
+
+
+         //********************************************
+         // FIX_ME #15b END
+         //********************************************
+
          }
          else {
             // Branch was mispredicted.
@@ -114,10 +131,16 @@ void pipeline_t::writeback(unsigned int lane_number) {
             // 1. See #15a, item 1.
             // 2. See #15a, item 2 -- EXCEPT in this case the branch was mispredicted, so specify not-correct instead of correct.
             //    This will restore the RMT, FL, and AL, and also free this and future checkpoints... etc.
-
+            
+            //********************************************
             // FIX_ME #15c BEGIN
-            REN->resolve(PAY.buf[index].AL_index, PAY.buf[index].branch_ID, false);
+            //********************************************
+
+            REN->resolve(PAY.buf[index].AL_index, PAY.buf[index].branch_ID, false); 
+
+            //********************************************
             // FIX_ME #15c END
+            //********************************************
 
             // Restore the LQ/SQ.
             LSU.restore(PAY.buf[index].LQ_index, PAY.buf[index].LQ_phase, PAY.buf[index].SQ_index, PAY.buf[index].SQ_phase);
@@ -134,9 +157,16 @@ void pipeline_t::writeback(unsigned int lane_number) {
             //      indicates whether or not the branch was predicted correctly: in this case it is not-correct.
             //    * See pipeline.h for details about the two arguments of resolve().
 
+            //********************************************
             // FIX_ME #15d BEGIN
+            //********************************************
+            
+            //call resolve 
             resolve(PAY.buf[index].branch_ID, false);
+
+            //********************************************
             // FIX_ME #15d END
+            //********************************************
 
             // Rollback PAY to the point of the branch.
             PAY.rollback(index);
@@ -152,9 +182,15 @@ void pipeline_t::writeback(unsigned int lane_number) {
       // 2. Set the completed bit for this instruction in the Active List.
       //////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+      //********************************************
       // FIX_ME #16 BEGIN
+      //********************************************
+
       REN->set_complete(PAY.buf[index].AL_index);
+
+      //********************************************
       // FIX_ME #16 END
+      //********************************************
 
       //////////////////////////////////////////////////////////////////////////////////////////////////////////
       // Remove the instruction from the Execution Lane.
