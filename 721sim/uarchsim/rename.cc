@@ -171,12 +171,26 @@ void pipeline_t::rename2() {
         PAY.buf[index].D_phys_reg = REN->rename_rsrc(PAY.buf[index].D_log_reg);
       }
 
+      //********************************************
+      // Predicting values of destination registers 
+      //********************************************
 
       //The destination register is C
       //If valid, call rename_rdst function. Input: log_reg, the logical register to rename
-      if (PAY.buf[index].C_valid){
-        PAY.buf[index].C_phys_reg = REN->rename_rdst(PAY.buf[index].C_log_reg);
-      }
+
+      uint64_t predicted_value;
+      if (PAY.buf[index].C_valid) {
+         // Check for a confident prediction for the logical destination register
+         if (get_confident_prediction(PAY.buf[index].C_log_reg, predicted_value)) {
+            // A confident prediction is available
+            PAY.buf[index].C_phys_reg = REN->rename_rdst(PAY.buf[index].C_log_reg);
+            PAY.buf[index].predicted_value = predicted_value; // Update the predicted value in the payload.
+         } else {
+            // No confident prediction available
+            PAY.buf[index].C_phys_reg = REN->rename_rdst(PAY.buf[index].C_log_reg);
+         }
+
+      
 
       //********************************************
       // FIX_ME #3 END
