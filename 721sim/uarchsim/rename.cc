@@ -184,7 +184,8 @@ void pipeline_t::rename2() {
          if (get_confident_prediction(PAY.buf[index].C_log_reg, predicted_value)) {
             // A confident prediction is available
             PAY.buf[index].C_phys_reg = REN->rename_rdst(PAY.buf[index].C_log_reg);
-            PAY.buf[index].predicted_value = predicted_value; // Update the predicted value in the payload.
+            PAY.buf[index].predicted_value = predicted_value; // Update the predicted value in the payload
+            PAY.buf[index].predict_flag = true; 
          } else {
             // No confident prediction available
             PAY.buf[index].C_phys_reg = REN->rename_rdst(PAY.buf[index].C_log_reg);

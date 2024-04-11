@@ -1,73 +1,78 @@
 #ifndef VALUE_PREDICTOR_H
 #define VALUE_PREDICTOR_H
 
-#include <cstdint>
+#include <inttypes.h>
 #include <vector>
-#include <queue>
-#include <unordered_map>
 
-using namespace std; 
+// Constants
+const unsigned int CONF_MAX = 3; // Confidence level saturates at 3 
+const unsigned int REPLACE_THRESHOLD = 1; // Threshold to replace a prediction entry
 
+/////////////////////////////////////////////////////////////////////
+// Structure 1: Stride Value Predictor Entry (SVP Entry)
+/////////////////////////////////////////////////////////////////////
+struct SVPEntry {
+    uint64_t pc;               // Program Counter as the tag
+    uint64_t last_value;            // Last retired value 
+    int64_t stride;            // Stride 
+    unsigned int confidence;   // Confidence counter
+    unsigned int instance;     // Instance number in the pipeline
+};
 
-	/////////////////////////////////////////////////////////////////////
-	// Structure 1: Value Prediction Queue 
-	/////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////
+// Structure 2: Stride Value Predictor (SVP)
+/////////////////////////////////////////////////////////////////////
+struct StrideValuePredictor {
+    SVPEntry *table;           // Table of value predictions
+    uint64_t size;             // Size of the SVP table
 
-    // Define the structure for a value prediction entry.
-    struct ValuePredictionEntry {
-        uint64_t tag;             // The tag of the instruction
-        unsigned int confidence;  // Confidence counter (saturates at 3)
-        uint64_t retired_value;   // The last retired value of the instruction
-        uint64_t stride;          // The stride between consecutive values
-        unsigned int instance;    // Latest Instance number in the pipeline
-    };
+    // Constructor and Destructor
+    StrideValuePredictor(uint64_t size);
+    ~StrideValuePredictor();
 
-    struct ValuePredictionQueue {
-        uint64_t head, tail;                
-        uint64_t size;                       // Size of the value prediction queue
-        uint64_t head_phase_bit, tail_phase_bit; // Phase bits to distinguish full/empty states when head equals tail
-        ValuePredictionEntry* queue;         // Array of value prediction entries
+    // SVP Operations
+    void trainOrReplace(uint64_t pc, uint64_t value); // Train or replace the SVP entry
+    bool getPrediction(uint64_t pc, uint64_t& predicted_value); // Retrieve prediction if confidence is high
+};
 
+StrideValuePredictor SVP; 
 
-        // Constructor and Destructor
-        ValuePredictionQueue(uint64_t size);
-        ~ValuePredictionQueue();
+/////////////////////////////////////////////////////////////////////
+// Structure 3: Value Prediction Queue (VPQ)
+/////////////////////////////////////////////////////////////////////
+struct VPQEntry {
+    SVPEntry prediction;       // The SVP entry that has been enqueued into the VPQ
+    uint64_t pc;               // Program Counter associated with this prediction
+    uint64_t computed_value; 
+};
 
-        // Additional methods
-        void enqueue(const ValuePredictionEntry& entry);
-        bool dequeue(ValuePredictionEntry& entry);
-        bool isConfidentPrediction(uint64_t tag) const;
-        uint64_t getPredictedValue(uint64_t tag) const;
-        void updatePrediction(uint64_t tag, uint64_t new_value, unsigned int new_confidence, uint64_t new_stride);
-        void resetPrediction(uint64_t tag);
-    };
+struct ValuePredictionQueue {
+    uint64_t head, tail;       // Head and tail indices for the VPQ
+    uint64_t head_phase_bit, tail_phase_bit; // Phase bits for head and tail
+    VPQEntry *queue;           // Array for the VPQ
+    uint64_t size;             // Size of the VPQ
 
-    ValuePredictionQueue vpQueue; 
+    // Constructor and Destructor
+    ValuePredictionQueue(uint64_t size);
+    ~ValuePredictionQueue();
 
-    /////////////////////////////////////////////////////////////////////
-    // Additional functions to support value prediction in the pipeline
-    /////////////////////////////////////////////////////////////////////
+    // VPQ Operations
+    void enqueue(const SVPEntry& prediction, uint64_t pc);
+    bool dequeue(SVPEntry& prediction, uint64_t& pc);
+    bool isFull() const;
+    bool isEmpty() const;
+};
 
-    //***************************************************************
-    //Rename Stage
-    //***************************************************************
+ValuePredictionQueue VPQ; 
 
-    //Call from the rename stage to get predicted value
-    bool get_confident_prediction(uint64_t logical_register, uint64_t& predicted_value);
+/////////////////////////////////////////////////////////////////////
+// Additional functions to support value prediction in the pipeline
+/////////////////////////////////////////////////////////////////////
 
-    //***************************************************************
-    //Dispatch Stage
-    //***************************************************************
+// Function to be called from the rename stage to get predicted value
+bool get_confident_prediction(uint64_t pc, uint64_t& predicted_value);
 
-    //Write predicted values into the physical register file
-    void write_predicted_values_to_prf(uint64_t physical_register, uint64_t value);
-
-    //Set PRF ready bits of predicted destination registers
-    void set_ready_bits_of_predicted_registers(uint64_t physical_register);
-
-    //Send predicted value to the issue queue
-    void send_predicted_value_to_issue_queue(uint64_t logical_register, uint64_t predicted_value);
-
-
+// Function to send predicted value to the issue queue
+void send_predicted_value_to_issue_queue(uint64_t logical_register, uint64_t predicted_value);
 
 #endif

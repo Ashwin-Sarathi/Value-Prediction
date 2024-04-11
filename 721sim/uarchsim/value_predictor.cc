@@ -6,126 +6,96 @@
 using namespace std; 
 
 //-------------------------------------------------------------------
-//Functions to manage VPQ
+// Constructor and Destructor for StrideValuePredictor
 //-------------------------------------------------------------------
 
-// Constructor for ValuePredictionQueue
+StrideValuePredictor::StrideValuePredictor(uint64_t size) {
+    SVP.size = size;
+    table = new SVPEntry[size];
+}
+
+StrideValuePredictor::~StrideValuePredictor() {
+    delete[] table;
+}
+
+//-------------------------------------------------------------------
+// SVP Operations
+//-------------------------------------------------------------------
+
+void StrideValuePredictor::trainOrReplace(uint64_t pc, uint64_t value) {
+}
+
+bool StrideValuePredictor::getPrediction(uint64_t pc, uint64_t& predicted_value) {
+    for (uint64_t i = 0; i < size; ++i) {
+        if (table[i].pc == pc && table[i].confidence >= CONF_MAX) {
+            predicted_value = table[i].last_value + (table[i].stride * table[i].instance);
+            return true;
+        }
+    }
+    return false;
+}
+
+//-------------------------------------------------------------------
+// Constructor and Destructor for ValuePredictionQueue
+//-------------------------------------------------------------------
+
 ValuePredictionQueue::ValuePredictionQueue(uint64_t size) {
-    vpQueue.head = 0;
-    vpQueue.tail = 0;
-    vpQueue.head_phase_bit = 0;
-    vpQueue.tail_phase_bit = 0;
-    vpQueue.size = size;
-    vpQueue.queue = new ValuePredictionEntry[size];
+    VPQ.size = size;
+    head = 0;
+    tail = 0;
+    head_phase_bit = 0;
+    tail_phase_bit = 0;
+    queue = new VPQEntry[size];
 }
 
-// Destructor for ValuePredictionQueue
 ValuePredictionQueue::~ValuePredictionQueue() {
-    delete[] vpQueue.queue;
+    delete[] queue;
 }
 
-// Enqueue a new prediction entry
-void ValuePredictionQueue::enqueue(const ValuePredictionEntry& entry) {
-    // Ensure the queue is not full
-    assert(!((vpQueue.head == vpQueue.tail) && (vpQueue.head_phase_bit != vpQueue.tail_phase_bit)));
-    vpQueue.queue[vpQueue.tail] = entry;
-    vpQueue.tail = (vpQueue.tail + 1) % vpQueue.size;
-    if (vpQueue.tail == vpQueue.head) {
-        // Toggle the phase bit to indicate the queue is full/empty
-        vpQueue.tail_phase_bit = (vpQueue.tail_phase_bit == 0) ? 1 : 0;
+//-------------------------------------------------------------------
+// VPQ Operations
+//-------------------------------------------------------------------
+
+void ValuePredictionQueue::enqueue(const SVPEntry& prediction, uint64_t pc) {
+    // Make sure queue is not full
+    assert(!isFull());
+    queue[tail].prediction = prediction;
+    queue[tail].pc = pc;
+    tail = (tail + 1) % size;
+    if (tail == head) {
+        tail_phase_bit = 1 - tail_phase_bit; // Toggle the phase bit
     }
 }
 
-// Dequeue a prediction entry
-bool ValuePredictionQueue::dequeue(ValuePredictionEntry& entry) {
-    if ((vpQueue.head == vpQueue.tail) && (vpQueue.head_phase_bit == vpQueue.tail_phase_bit)) {
+bool ValuePredictionQueue::dequeue(SVPEntry& prediction, uint64_t& pc) {
+    if (isEmpty()) {
         return false; // Queue is empty
     }
-    entry = vpQueue.queue[vpQueue.head];
-    vpQueue.head = (vpQueue.head + 1) % vpQueue.size;
-    if (vpQueue.head == vpQueue.tail) {
-        // Toggle the phase bit to indicate the queue is full/empty
-        vpQueue.head_phase_bit = (vpQueue.head_phase_bit == 0) ? 1 : 0;
+    prediction = queue[head].prediction;
+    pc = queue[head].pc;
+    head = (head + 1) % size;
+    if (head == tail) {
+        head_phase_bit = 1 - head_phase_bit; // Toggle the phase bit
     }
     return true;
 }
 
-// Check if there is a confident prediction for the given tag
-bool ValuePredictionQueue::isConfidentPrediction(uint64_t tag) const {
-    for (size_t i = vpQueue.head; ; i = (i + 1) % vpQueue.size) {
-        if (vpQueue.queue[i].tag == tag && vpQueue.queue[i].confidence >= 3) {
-            return true;
-        }
-        if (i == vpQueue.tail && vpQueue.head_phase_bit == vpQueue.tail_phase_bit) break; // End of queue
-    }
-    return false;
+bool ValuePredictionQueue::isFull() const {
+    return (head == tail) && (head_phase_bit != tail_phase_bit);
 }
 
-// Get the predicted value for the given tag
-uint64_t ValuePredictionQueue::getPredictedValue(uint64_t tag) const {
-    for (size_t i = vpQueue.head; ; i = (i + 1) % vpQueue.size) {
-        if (vpQueue.queue[i].tag == tag) {
-            // Calculate the predicted value based on retired_value, instance, and stride
-            return vpQueue.queue[i].retired_value + vpQueue.queue[i].instance * vpQueue.queue[i].stride;
-        }
-        if (i == vpQueue.tail && vpQueue.head_phase_bit == vpQueue.tail_phase_bit) break; // End of queue
-    }
-    assert(false); // This should never happen if predictions are managed correctly
-    return 0; 
+bool ValuePredictionQueue::isEmpty() const {
+    return (head == tail) && (head_phase_bit == tail_phase_bit);
 }
-
-// Update the prediction entry for the given tag
-void ValuePredictionQueue::updatePrediction(uint64_t tag, uint64_t new_value, unsigned int new_confidence, uint64_t new_stride) {
-    for (size_t i = vpQueue.head; ; i = (i + 1) % vpQueue.size) {
-        if (vpQueue.queue[i].tag == tag) {
-            vpQueue.queue[i].retired_value = new_value;
-            vpQueue.queue[i].confidence = min(new_confidence, 3u); // Saturate confidence at 3
-            vpQueue.queue[i].stride = new_stride;
-            return;
-        }
-        if (i == vpQueue.tail && vpQueue.head_phase_bit == vpQueue.tail_phase_bit) break; // End of queue
-    }
-    assert(false); // This should never happen if predictions are managed correctly
-}
-
-// Reset the prediction entry for the given tag
-void ValuePredictionQueue::resetPrediction(uint64_t tag) {
-    for (size_t i = vpQueue.head; ; i = (i + 1) % vpQueue.size) {
-        if (vpQueue.queue[i].tag == tag) {
-            vpQueue.queue[i].confidence = 0; // Reset confidence to zero
-            return;
-        }
-        if (i == vpQueue.tail && vpQueue.head_phase_bit == vpQueue.tail_phase_bit) break; // End of queue
-    }
-}
-
 
 //-------------------------------------------------------------------
-//Functions to inject confident value predictions
+// Additional functions to support value prediction in the pipeline
 //-------------------------------------------------------------------
 
-//*****************************
-//Rename Stage
-//*****************************
-
-bool get_confident_prediction(uint64_t logical_register, uint64_t& predicted_value) {
-    if (vpQueue.isConfidentPrediction(logical_register)) {
-        // Get predicted value
-        predicted_value = vpQueue.getPredictedValue(logical_register);
-        return true;
-    }
-    //Do not update the predicted_value if its not confident
-    return false;
+bool get_confident_prediction(uint64_t pc, uint64_t& predicted_value) {
+    return SVP.getPrediction(pc, predicted_value);
 }
 
-//*****************************
-//Dispatch Stage
-//*****************************
-
-
-//*****************************
-//Writeback Stage
-//*****************************
-
-
-
+void send_predicted_value_to_issue_queue(uint64_t logical_register, uint64_t predicted_value) {
+    // Implementation goes here
+}

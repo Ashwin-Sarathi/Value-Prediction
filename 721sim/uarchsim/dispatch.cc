@@ -231,7 +231,7 @@ void pipeline_t::dispatch() {
       //*******************************************
 
       if (PAY.buf[index].C_valid) {
-         if (PAY.buf[index].predicted_value) {
+         if (PAY.buf[index].predict_flag == true) {
             // Write the predicted value into the physical register file.
             REN->write(PAY.buf[index].C_phys_reg, PAY.buf[index].predicted_value);
 

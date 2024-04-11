@@ -139,7 +139,9 @@ typedef struct {
    //************************************************
    //ADD predicted value to the destination register
    //************************************************
-   uint64_t predicted_value;
+   uint64_t predicted_value;     //If confident, prediction is available
+
+   bool predict_flag;            //If true prediction, predicted_value is not empty
 
    // ** SOURCE ** register D.
    // Floating-point multiply-accumulate uses a third source register.
