@@ -190,6 +190,7 @@ void pipeline_t::rename2() {
             // No confident prediction available
             PAY.buf[index].C_phys_reg = REN->rename_rdst(PAY.buf[index].C_log_reg);
          }
+      }
 
       
 

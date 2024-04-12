@@ -238,7 +238,7 @@ void pipeline_t::dispatch() {
             // Set the ready bit of the predicted destination register.
             REN->set_ready(PAY.buf[index].C_phys_reg);
          } else {
-            // Clear the ready bit of non-predicted destination registers, like usual.
+            // Clear the ready bit of non-predicted destination registers, like usual
             REN->clear_ready(PAY.buf[index].C_phys_reg);
          }
       }

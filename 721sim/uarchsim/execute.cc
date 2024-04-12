@@ -77,7 +77,7 @@ void pipeline_t::execute(unsigned int lane_number) {
             //********************************************
             
             //use the write function from the renamer to write a value into a physical register. Input: Physical register & value(which is the doubleword here)
-            if (PAY.buf[index].C_valid && hit){
+            if (PAY.buf[index].C_valid && hit && !PAY.buf[index].predict_flag){
                 IQ.wakeup(PAY.buf[index].C_phys_reg);
                 REN->set_ready(PAY.buf[index].C_phys_reg);
                 REN->write(PAY.buf[index].C_phys_reg, PAY.buf[index].C_value.dw);
@@ -218,7 +218,7 @@ void pipeline_t::execute(unsigned int lane_number) {
 
          bool check = PAY.buf[index].C_valid &&  
                               !IS_LOAD(PAY.buf[index].flags) && 
-                              !IS_AMO(PAY.buf[index].flags);
+                              !IS_AMO(PAY.buf[index].flags) && !PAY.buf[index].predict_flag;
 
          if (check) {
             IQ.wakeup(PAY.buf[index].C_phys_reg);
@@ -270,7 +270,7 @@ void pipeline_t::load_replay() {
       // Load has resolved.
       assert(IS_LOAD(PAY.buf[index].flags));
    
-      if (PAY.buf[index].C_valid) {
+      if (PAY.buf[index].C_valid && !PAY.buf[index].predict_flag) {
          assert(PAY.buf[index].C_log_reg != 0); // if X0, would have cleared C_valid in Decode Stage
          PAY.buf[index].C_value.dw = value;
       
