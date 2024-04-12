@@ -23,6 +23,40 @@ StrideValuePredictor::~StrideValuePredictor() {
 //-------------------------------------------------------------------
 
 void StrideValuePredictor::trainOrReplace(uint64_t pc, uint64_t value) {
+    // Calculate the index for the SVP entry using the PC
+    uint64_t index = pc % size; // Modulo operation to wrap around the table size
+
+    // If PC tags match or if the confidence level is 0, it needs to be replaced
+    if (table[index].pc == pc || table[index].confidence == 0) {
+        // If tag match or entry is unused, train the existing entry
+
+        // Check if the current entry has the same stride as previous
+        int64_t new_stride = value - table[index].last_value;
+
+        if (table[index].stride == new_stride) {
+            // If its the same stride -->  increase confidence while not exceeding CONF_MAX
+            if (table[index].confidence < CONF_MAX) {
+                table[index].confidence++;
+            }
+        } else {
+            // If the stride has changed --> set the new stride and reset confidence
+            table[index].stride = new_stride;
+            table[index].confidence = 1; // Reset confidence to 1 as this is a new pattern
+        }
+
+        // Update last retired value and instance count
+        table[index].last_value = value;
+        table[index].instance = 1; // instance needs to be reset to 1 for a new observationas since we saw a new value
+
+    } else if (table[index].confidence <= REPLACE_THRESHOLD) {
+        // If the entry's confidence is less than or equal to threashold to replace --> replace the old prediction with the new one.
+
+        table[index].pc = pc;
+        table[index].last_value = value;
+        table[index].stride = 0; // Initilaze the stride to 0
+        table[index].confidence = 1; // Starting confidence for a new prediction
+        table[index].instance = 1; // Start with the first instance
+    }
 }
 
 bool StrideValuePredictor::getPrediction(uint64_t pc, uint64_t& predicted_value) {

@@ -318,6 +318,61 @@ static void config_L2L3present(const char* config) {
    }
 }
 
+//****************************************************************
+//SVP FLAGS
+//****************************************************************
+
+void set_value_prediction_flags(const char* config) {
+
+   unsigned int enable_value_prediction = 0;
+
+   int vp_enable_flag = atoi(config); // Convert the string argument to an integer
+   if(vp_enable_flag == 0) {
+      enable_value_prediction = 0; // Disable value prediction
+   } else if(vp_enable_flag == 1) {
+      enable_value_prediction = 1;  // Enable value prediction
+   } else {
+      fprintf(stderr, "Invalid argument for --vp-enable. Must be 0 (disable) or 1 (enable).\n");
+      exit(EXIT_FAILURE); // Exit with a non-zero value to indicate an error
+   }
+}
+
+void set_svp_flags(const char* config) {
+
+   unsigned int vpq_size = 0;
+   unsigned int oracle_confidence = 0;
+   unsigned int svp_index_bits = 0;
+   unsigned int svp_tag_bits = 0;
+   unsigned int svp_conf_max = 0;
+   unsigned int svp_conf_inc = 0;
+   unsigned int svp_conf_dec = 0;
+   unsigned int svp_replace_stride = 0;
+   unsigned int svp_replace = 0;
+   unsigned int svp_predict_int_alu = 0;
+   unsigned int svp_predict_fp_alu = 0;
+   unsigned int svp_predict_load = 0;
+   unsigned int vpq_full_policy = 0;
+
+  // Parse the --vp-svp=<string> option.
+  sscanf(config, "%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u",
+                 &vpq_size,
+                 &oracle_confidence,
+                 &svp_index_bits,
+                 &svp_tag_bits,
+                 &svp_conf_max,
+                 &svp_conf_inc,
+                 &svp_conf_dec,
+                 &svp_replace_stride,
+                 &svp_replace,
+                 &svp_predict_int_alu,
+                 &svp_predict_fp_alu,
+                 &svp_predict_load,
+                 &vpq_full_policy);
+
+}
+
+
+
 /* exit when this becomes non-zero */
 //int sim_exit_now = FALSE;
 // Should be global variables for access from all DPI functions
@@ -406,6 +461,12 @@ int main(int argc, char** argv)
       IDEAL_AGE_BASED = true;
       NUM_CHECKPOINTS = 64;
       FETCH_QUEUE_SIZE = 64;});
+   
+   //**************************************************************
+   //Final Project
+   //**************************************************************
+   parser.option(0, "vp-enable", 1, [&](const char* s){ set_value_prediction_flags(s);});
+   parser.option(0, "vp-svp", 1, [&](const char* s){ set_svp_flags(s);});
 
   auto argv1 = parser.parse(argv);
   if (!*argv1)
