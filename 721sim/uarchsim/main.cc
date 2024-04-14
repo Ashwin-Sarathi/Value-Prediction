@@ -32,7 +32,7 @@ static void help()
   fprintf(stderr, "  -s<n>              Fast skip <n> instructions before microarchitectural simulation\n");
   fprintf(stderr, "  --perf=<pbp>,<pdc>,<pic>,<ptc>\tEach of pbp (perf. branch pred.), pdc (perf. D$), pic (perf. I$) and ptc (perf. T$) are 0 or 1\n");
   fprintf(stderr, "  --cp=<n>           <n> branch checkpoints for mispredict recovery\n");
-  fprintf(stderr, "  --vp-perf          Choose the prefect value predictor\n");
+  fprintf(stderr, "  --vp-perf=<n>       Turn on or off perfect value prediction with 1 or 0\n");
 
   fprintf(stderr, "  --bq=<n>           Branch queue (all branches b/w fetch and retire) has <n> entries\n");
   fprintf(stderr, "  --btbentries=<n>   BTB has a total of <n> entries\n");
