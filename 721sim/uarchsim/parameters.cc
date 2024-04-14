@@ -4,14 +4,15 @@
 // Pipe control
 uint32_t PIPE_QUEUE_SIZE  = 8192;
 
-
+// Perfect Value Prediction
+bool PERFECT_VALUE_PREDICTION = false;
 
 // Oracle controls.
-bool PERFECT_BRANCH_PRED	= false;
-bool PERFECT_TRACE_CACHE	= false;
-bool ORACLE_DISAMBIG		  = false;
-bool PERFECT_ICACHE		    = false;
-bool PERFECT_DCACHE		    = false;
+bool PERFECT_BRANCH_PRED	    = false;
+bool PERFECT_TRACE_CACHE	    = false;
+bool ORACLE_DISAMBIG		    = false;
+bool PERFECT_ICACHE		        = false;
+bool PERFECT_DCACHE		        = false;
 
 // Core.
 uint32_t FETCH_QUEUE_SIZE	= 32;

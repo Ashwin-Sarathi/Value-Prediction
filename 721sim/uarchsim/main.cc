@@ -30,8 +30,9 @@ static void help()
   fprintf(stderr, "  -m<n>              Provide <n> MB of target memory\n");
   fprintf(stderr, "  -p<n>              Simulate <n> processors\n");
   fprintf(stderr, "  -s<n>              Fast skip <n> instructions before microarchitectural simulation\n");
-  fprintf(stderr, "  --perf=<pbp>,<pdc>,<pic>,<ptc>\tEach of pbp (perf. branch pred.), pdc (perf. D$), pic (perf. I$), and ptc (perf. T$), are 0 or 1\n");
+  fprintf(stderr, "  --perf=<pbp>,<pdc>,<pic>,<ptc>\tEach of pbp (perf. branch pred.), pdc (perf. D$), pic (perf. I$) and ptc (perf. T$) are 0 or 1\n");
   fprintf(stderr, "  --cp=<n>           <n> branch checkpoints for mispredict recovery\n");
+  fprintf(stderr, "  --vp-perf          Choose the prefect value predictor\n");
 
   fprintf(stderr, "  --bq=<n>           Branch queue (all branches b/w fetch and retire) has <n> entries\n");
   fprintf(stderr, "  --btbentries=<n>   BTB has a total of <n> entries\n");
@@ -144,7 +145,7 @@ static void set_perfect_flags(const char* config) {
    uint64_t pbp, pdc, pic, ptc;
    if (sscanf(config, "%lu,%lu,%lu,%lu", &pbp, &pdc, &pic, &ptc) != 4) {
       fprintf(stderr, "Incorrect usage of --perf=<pbp>,<pdc>,<pic>,<ptc>\n");
-      fprintf(stderr, "...where pbp (perfect branch prediction), pdc (perfect D$), pic (perfect I$), and ptc (perfect T$) are each 0 or 1.\n");
+      fprintf(stderr, "...where pbp (perfect branch prediction), pdc (perfect D$), pic (perfect I$) and ptc (perfect T$) are each 0 or 1.\n");
       exit(-1);
    }
    else {
@@ -152,6 +153,18 @@ static void set_perfect_flags(const char* config) {
       PERFECT_DCACHE = (pdc ? true : false);
       PERFECT_ICACHE = (pic ? true : false);
       PERFECT_TRACE_CACHE = (ptc ? true : false);
+   }
+}
+
+static void set_perfect_value_prediction(const char* config) {
+   uint64_t pvp;
+   if (sscanf(config, "%lu", &pvp) != 1) {
+      fprintf(stderr, "Incorrect usage of --vp-perf\n");
+      fprintf(stderr, "...where pvp refers to activation of perfect value prediction.\n");
+      exit(-1);
+   }
+   else {
+      PERFECT_VALUE_PREDICTION = (pvp ? true : false);
    }
 }
 
@@ -368,6 +381,7 @@ int main(int argc, char** argv)
   parser.option(0, "L2L3exist", 1, [&](const char* s){config_L2L3present(s);});
   parser.option(0, "MEMLAT", 1, [&](const char* s){L1_IC_MISS_LATENCY = L1_DC_MISS_LATENCY = L2_MISS_LATENCY = atoi(s);});
   parser.option(0, "perf", 1, [&](const char* s){set_perfect_flags(s);});
+  parser.option(0, "vp-perf", 1, [&](const char* s){set_perfect_value_prediction(s);});
   parser.option(0, "cp"  , 1, [&](const char* s){NUM_CHECKPOINTS = atoi(s);});
 
   parser.option(0, "bq", 1, [&](const char* s){BQ_SIZE = atoi(s); AUTO_BQ_SIZE = false;});
