@@ -32,6 +32,7 @@ static void help()
   fprintf(stderr, "  -s<n>              Fast skip <n> instructions before microarchitectural simulation\n");
   fprintf(stderr, "  --perf=<pbp>,<pdc>,<pic>,<ptc>\tEach of pbp (perf. branch pred.), pdc (perf. D$), pic (perf. I$) and ptc (perf. T$) are 0 or 1\n");
   fprintf(stderr, "  --cp=<n>           <n> branch checkpoints for mispredict recovery\n");
+  fprintf(stderr, "  --vp-enable=<n>     Enable/disable value prediction with 1 or 0\n");
   fprintf(stderr, "  --vp-perf=<n>       Turn on or off perfect value prediction with 1 or 0\n");
 
   fprintf(stderr, "  --bq=<n>           Branch queue (all branches b/w fetch and retire) has <n> entries\n");
@@ -153,6 +154,18 @@ static void set_perfect_flags(const char* config) {
       PERFECT_DCACHE = (pdc ? true : false);
       PERFECT_ICACHE = (pic ? true : false);
       PERFECT_TRACE_CACHE = (ptc ? true : false);
+   }
+}
+
+static void enable_value_prediction(const char* config) {
+   uint64_t vp_e;
+   if (sscanf(config, "%lu", &vp_e) != 1) {
+      fprintf(stderr, "Incorrect usage of --vp-enable\n");
+      fprintf(stderr, "...where vp_e refers to enabling value prediction.\n");
+      exit(-1);
+   }
+   else {
+      VALUE_PREDICTION_ENABLED = (vp_e ? true : false);
    }
 }
 
@@ -381,6 +394,7 @@ int main(int argc, char** argv)
   parser.option(0, "L2L3exist", 1, [&](const char* s){config_L2L3present(s);});
   parser.option(0, "MEMLAT", 1, [&](const char* s){L1_IC_MISS_LATENCY = L1_DC_MISS_LATENCY = L2_MISS_LATENCY = atoi(s);});
   parser.option(0, "perf", 1, [&](const char* s){set_perfect_flags(s);});
+  parser.option(0, "vp-enable", 1, [&](const char* s){enable_value_prediction(s);});
   parser.option(0, "vp-perf", 1, [&](const char* s){set_perfect_value_prediction(s);});
   parser.option(0, "cp"  , 1, [&](const char* s){NUM_CHECKPOINTS = atoi(s);});
 
@@ -448,6 +462,8 @@ int main(int argc, char** argv)
   char c, *all_options;
 
   /* opening banner */
+//   Testing command line arguments:   
+//   printf("VALUE PREDICTION ENABLED = %lu\n", VALUE_PREDICTION_ENABLED);
 
   /* 2/14/18 ER: Add banner for 721 simulator. */
   fprintf(stderr,

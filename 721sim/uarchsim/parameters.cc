@@ -4,7 +4,8 @@
 // Pipe control
 uint32_t PIPE_QUEUE_SIZE  = 8192;
 
-// Perfect Value Prediction
+// Value Prediction
+bool VALUE_PREDICTION_ENABLED = false;
 bool PERFECT_VALUE_PREDICTION = false;
 
 // Oracle controls.

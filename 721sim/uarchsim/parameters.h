@@ -5,9 +5,9 @@
 // Pipe control
 extern unsigned int PIPE_QUEUE_SIZE;
 
-// Prefect Value Prediction
+// Value Prediction
+extern bool VALUE_PREDICTION_ENABLED;
 extern bool PERFECT_VALUE_PREDICTION;
-
 
 // Oracle controls.
 extern bool PERFECT_BRANCH_PRED;
