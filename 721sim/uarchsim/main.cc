@@ -17,6 +17,24 @@
 #include "parameters.h"
 #include <signal.h>
 
+//GLOBALS
+
+   unsigned int vpq_size = 0;
+   unsigned int oracle_confidence = 0;
+   unsigned int svp_index_bits = 0;
+   unsigned int svp_tag_bits = 0;
+   unsigned int svp_conf_max = 0;
+   unsigned int svp_conf_inc = 0;
+   unsigned int svp_conf_dec = 0;
+   unsigned int svp_replace_stride = 0;
+   unsigned int svp_replace = 0;
+   unsigned int svp_predict_int_alu = 0;
+   unsigned int svp_predict_fp_alu = 0;
+   unsigned int svp_predict_load = 0;
+   unsigned int vpq_full_policy = 0;
+   unsigned int enable_value_prediction = 0;
+
+
 static void help()
 {
   fprintf(stderr, "usage: micros [host options] <target program> [target options]\n");
@@ -324,8 +342,6 @@ static void config_L2L3present(const char* config) {
 
 void set_value_prediction_flags(const char* config) {
 
-   unsigned int enable_value_prediction = 0;
-
    int vp_enable_flag = atoi(config); // Convert the string argument to an integer
    if(vp_enable_flag == 0) {
       enable_value_prediction = 0; // Disable value prediction
@@ -338,20 +354,6 @@ void set_value_prediction_flags(const char* config) {
 }
 
 void set_svp_flags(const char* config) {
-
-   unsigned int vpq_size = 0;
-   unsigned int oracle_confidence = 0;
-   unsigned int svp_index_bits = 0;
-   unsigned int svp_tag_bits = 0;
-   unsigned int svp_conf_max = 0;
-   unsigned int svp_conf_inc = 0;
-   unsigned int svp_conf_dec = 0;
-   unsigned int svp_replace_stride = 0;
-   unsigned int svp_replace = 0;
-   unsigned int svp_predict_int_alu = 0;
-   unsigned int svp_predict_fp_alu = 0;
-   unsigned int svp_predict_load = 0;
-   unsigned int vpq_full_policy = 0;
 
   // Parse the --vp-svp=<string> option.
   sscanf(config, "%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u,%u",

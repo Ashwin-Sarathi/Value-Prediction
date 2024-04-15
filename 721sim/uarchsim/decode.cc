@@ -41,9 +41,14 @@ void pipeline_t::decode() {
 		// Set checkpoint flag.
 		switch (inst.opcode()) {
 			case OP_JAL:
+				PAY.buf[index].branch_not_eligible = true;
+				break; 
 			case OP_JALR:
+				PAY.buf[index].branch_not_eligible = true;
+				break; 
 			case OP_BRANCH:
 				PAY.buf[index].checkpoint = true;
+				PAY.buf[index].branch_not_eligible = true;
 				break;
 
 			default:

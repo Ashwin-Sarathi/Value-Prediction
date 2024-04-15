@@ -51,7 +51,7 @@ void pipeline_t::rename1() {
 void pipeline_t::rename2() {
    unsigned int i;
    unsigned int index;
-   unsigned int bundle_dst, bundle_branch;
+   unsigned int bundle_dst, bundle_branch, bundle_VPQ;
 
    // Stall the rename2 sub-stage if either:
    // (1) There isn't a current rename bundle.
@@ -66,6 +66,7 @@ void pipeline_t::rename2() {
    // Third stall condition: There aren't enough rename resources for the current rename bundle.
    bundle_dst = 0;
    bundle_branch = 0;
+   bundle_VPQ = 0; 
    for (i = 0; i < dispatch_width; i++) {
       if (!RENAME2[i].valid)
          break;			// Not a valid instruction: Reached the end of the rename bundle so exit loop.
@@ -76,6 +77,7 @@ void pipeline_t::rename2() {
       // FIX_ME #1
       // Count the number of instructions in the rename bundle that need a checkpoint (most branches).
       // Count the number of instructions in the rename bundle that have a destination register.
+      //Count the number of instructions in the VPQ
       // With these counts, you will be able to query the renamer for resource availability
       // (checkpoints and physical registers).
       //
@@ -97,6 +99,9 @@ void pipeline_t::rename2() {
       }
       if(PAY.buf[index].checkpoint){
          bundle_branch++; 
+      }
+      if(isEligible(PAY.buf[index].pc, PAY.buf[index].branch_not_eligible)){
+         bundle_VPQ++;
       }
 
       //********************************************
@@ -125,6 +130,9 @@ void pipeline_t::rename2() {
    }
    if(REN->stall_reg(bundle_dst)) {
          return;
+   }
+   if(VPQ.stall_VPQ(bundle_VPQ)){
+      return; 
    }
 
    //********************************************
@@ -180,9 +188,16 @@ void pipeline_t::rename2() {
 
       uint64_t predicted_value;
       if (PAY.buf[index].C_valid) {
+
+         //If it reaches to this stage, that means its an eligible instruction with a destination register 
+         //Whether this hits in the SVP or not, the instructions needs an entry in the VPQ
+         // Enqueue the prediction to the VPQ
+         VPQ.enqueue(PAY.buf[index].pc);
+
          // Check for a confident prediction for the logical destination register
-         if (get_confident_prediction(PAY.buf[index].C_log_reg, predicted_value)) {
+         if (get_confident_prediction(PAY.buf[index].pc, predicted_value)) {
             // A confident prediction is available
+            //Instance is incremented within get_confident_prediction
             PAY.buf[index].C_phys_reg = REN->rename_rdst(PAY.buf[index].C_log_reg);
             PAY.buf[index].predicted_value = predicted_value; // Update the predicted value in the payload
             PAY.buf[index].predict_flag = true; 
@@ -192,8 +207,7 @@ void pipeline_t::rename2() {
          }
       }
 
-      
-
+   
       //********************************************
       // FIX_ME #3 END
       //********************************************

@@ -3,6 +3,7 @@
 
 #include <inttypes.h>
 #include <vector>
+#include "parameters.h"
 
 // Constants
 const unsigned int CONF_MAX = 3; // Confidence level saturates at 3 
@@ -27,7 +28,7 @@ struct StrideValuePredictor {
     uint64_t size;             // Size of the SVP table
 
     // Constructor and Destructor
-    StrideValuePredictor(uint64_t size);
+    StrideValuePredictor(uint64_t index_bits);
     ~StrideValuePredictor();
 
     // SVP Operations
@@ -35,13 +36,12 @@ struct StrideValuePredictor {
     bool getPrediction(uint64_t pc, uint64_t& predicted_value); // Retrieve prediction if confidence is high
 };
 
-StrideValuePredictor SVP; 
+StrideValuePredictor SVP(svp_index_bits); 
 
 /////////////////////////////////////////////////////////////////////
 // Structure 3: Value Prediction Queue (VPQ)
 /////////////////////////////////////////////////////////////////////
 struct VPQEntry {
-    SVPEntry prediction;       // The SVP entry that has been enqueued into the VPQ
     uint64_t pc;               // Program Counter associated with this prediction
     uint64_t computed_value; 
 };
@@ -53,17 +53,18 @@ struct ValuePredictionQueue {
     uint64_t size;             // Size of the VPQ
 
     // Constructor and Destructor
-    ValuePredictionQueue(uint64_t size);
+    ValuePredictionQueue(uint64_t vpq_entries);
     ~ValuePredictionQueue();
 
     // VPQ Operations
-    void enqueue(const SVPEntry& prediction, uint64_t pc);
-    bool dequeue(SVPEntry& prediction, uint64_t& pc);
+    bool enqueue(uint64_t pc);
+    bool dequeue(uint64_t& pc);
     bool isFull() const;
     bool isEmpty() const;
+    bool stall_VPQ(uint64_t bundle_inst); 
 };
 
-ValuePredictionQueue VPQ; 
+ValuePredictionQueue VPQ(vpq_size); 
 
 /////////////////////////////////////////////////////////////////////
 // Additional functions to support value prediction in the pipeline
@@ -72,7 +73,9 @@ ValuePredictionQueue VPQ;
 // Function to be called from the rename stage to get predicted value
 bool get_confident_prediction(uint64_t pc, uint64_t& predicted_value);
 
-// Function to send predicted value to the issue queue
-void send_predicted_value_to_issue_queue(uint64_t logical_register, uint64_t predicted_value);
+//Get Eligible instructions
+bool isEligible(uint64_t pc, bool eligibility);
+
+//Increment VPQ entry and instance of SVP: train or replace here 
 
 #endif

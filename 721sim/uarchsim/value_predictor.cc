@@ -9,9 +9,9 @@ using namespace std;
 // Constructor and Destructor for StrideValuePredictor
 //-------------------------------------------------------------------
 
-StrideValuePredictor::StrideValuePredictor(uint64_t size) {
-    SVP.size = size;
-    table = new SVPEntry[size];
+StrideValuePredictor::StrideValuePredictor(uint64_t index_bits) {
+    SVP.size = 1ULL << index_bits; //2^index_bits
+    SVP.table = new SVPEntry[SVP.size];
 }
 
 StrideValuePredictor::~StrideValuePredictor() {
@@ -24,45 +24,46 @@ StrideValuePredictor::~StrideValuePredictor() {
 
 void StrideValuePredictor::trainOrReplace(uint64_t pc, uint64_t value) {
     // Calculate the index for the SVP entry using the PC
-    uint64_t index = pc % size; // Modulo operation to wrap around the table size
+    uint64_t index = pc % SVP.size; // Modulo operation to wrap around the table size
 
     // If PC tags match or if the confidence level is 0, it needs to be replaced
-    if (table[index].pc == pc || table[index].confidence == 0) {
+    if (SVP.table[index].pc == pc || SVP.table[index].confidence == 0) {
         // If tag match or entry is unused, train the existing entry
 
         // Check if the current entry has the same stride as previous
-        int64_t new_stride = value - table[index].last_value;
+        int64_t new_stride = value - SVP.table[index].last_value;
 
-        if (table[index].stride == new_stride) {
+        if (SVP.table[index].stride == new_stride) {
             // If its the same stride -->  increase confidence while not exceeding CONF_MAX
-            if (table[index].confidence < CONF_MAX) {
-                table[index].confidence++;
+            if (SVP.table[index].confidence < CONF_MAX) {
+                SVP.table[index].confidence++;
             }
         } else {
             // If the stride has changed --> set the new stride and reset confidence
-            table[index].stride = new_stride;
-            table[index].confidence = 1; // Reset confidence to 1 as this is a new pattern
+            SVP.table[index].stride = new_stride;
+            SVP.table[index].confidence = 1; // Reset confidence to 1 as this is a new pattern
         }
 
         // Update last retired value and instance count
-        table[index].last_value = value;
-        table[index].instance = 1; // instance needs to be reset to 1 for a new observationas since we saw a new value
+        SVP.table[index].last_value = value;
+        SVP.table[index].instance = 1; // instance needs to be reset to 1 for a new observationas since we saw a new value
 
-    } else if (table[index].confidence <= REPLACE_THRESHOLD) {
+    } else if (SVP.table[index].confidence <= REPLACE_THRESHOLD) {
         // If the entry's confidence is less than or equal to threashold to replace --> replace the old prediction with the new one.
 
-        table[index].pc = pc;
-        table[index].last_value = value;
-        table[index].stride = 0; // Initilaze the stride to 0
-        table[index].confidence = 1; // Starting confidence for a new prediction
-        table[index].instance = 1; // Start with the first instance
+        SVP.table[index].pc = pc;
+        SVP.table[index].last_value = value;
+        SVP.table[index].stride = 0; // Initilaze the stride to 0
+        SVP.table[index].confidence = 1; // Starting confidence for a new prediction
+        SVP.table[index].instance = 1; // Start with the first instance
     }
 }
 
 bool StrideValuePredictor::getPrediction(uint64_t pc, uint64_t& predicted_value) {
-    for (uint64_t i = 0; i < size; ++i) {
-        if (table[i].pc == pc && table[i].confidence >= CONF_MAX) {
-            predicted_value = table[i].last_value + (table[i].stride * table[i].instance);
+    for (uint64_t i = 0; i < SVP.size; ++i) {
+        if (SVP.table[i].pc == pc && SVP.table[i].confidence >= CONF_MAX) {
+            predicted_value = SVP.table[i].last_value + (SVP.table[i].stride * SVP.table[i].instance);
+            SVP.table[i].instance++;            //increment the instance 
             return true;
         }
     }
@@ -73,13 +74,13 @@ bool StrideValuePredictor::getPrediction(uint64_t pc, uint64_t& predicted_value)
 // Constructor and Destructor for ValuePredictionQueue
 //-------------------------------------------------------------------
 
-ValuePredictionQueue::ValuePredictionQueue(uint64_t size) {
-    VPQ.size = size;
-    head = 0;
-    tail = 0;
-    head_phase_bit = 0;
-    tail_phase_bit = 0;
-    queue = new VPQEntry[size];
+ValuePredictionQueue::ValuePredictionQueue(uint64_t vpq_entries) {
+    VPQ.size = vpq_entries;
+    VPQ.head = 0;
+    VPQ.tail = 0;
+    VPQ.head_phase_bit = 0;
+    VPQ.tail_phase_bit = 0;
+    VPQ.queue = new VPQEntry[VPQ.size];
 }
 
 ValuePredictionQueue::~ValuePredictionQueue() {
@@ -90,26 +91,36 @@ ValuePredictionQueue::~ValuePredictionQueue() {
 // VPQ Operations
 //-------------------------------------------------------------------
 
-void ValuePredictionQueue::enqueue(const SVPEntry& prediction, uint64_t pc) {
-    // Make sure queue is not full
-    assert(!isFull());
-    queue[tail].prediction = prediction;
-    queue[tail].pc = pc;
-    tail = (tail + 1) % size;
-    if (tail == head) {
-        tail_phase_bit = 1 - tail_phase_bit; // Toggle the phase bit
+bool ValuePredictionQueue::enqueue(uint64_t pc) {
+    if (isFull()) {
+        std::cerr << "ERROR: Attempted to enqueue to a full Value Prediction Queue.\n";
+        return false;
     }
+
+    queue[tail].pc = pc;
+    tail++;
+    
+    // Handle wrap-around case for the tail pointer
+    if (tail == size) {
+        tail_phase_bit = !tail_phase_bit;
+        tail = 0;
+    }
+    return true;
 }
 
-bool ValuePredictionQueue::dequeue(SVPEntry& prediction, uint64_t& pc) {
+bool ValuePredictionQueue::dequeue(uint64_t& pc) {
     if (isEmpty()) {
-        return false; // Queue is empty
+        std::cerr << "ERROR: Attempted to dequeue from an empty Value Prediction Queue.\n";
+        return false;
     }
-    prediction = queue[head].prediction;
+
     pc = queue[head].pc;
-    head = (head + 1) % size;
-    if (head == tail) {
-        head_phase_bit = 1 - head_phase_bit; // Toggle the phase bit
+    head++;
+    
+    // Handle wrap-around case for the head pointer
+    if (head == size) {
+        head_phase_bit = !head_phase_bit;
+        head = 0;
     }
     return true;
 }
@@ -122,6 +133,38 @@ bool ValuePredictionQueue::isEmpty() const {
     return (head == tail) && (head_phase_bit == tail_phase_bit);
 }
 
+bool ValuePredictionQueue::stall_VPQ(uint64_t bundle_inst) {
+    uint64_t free_entries;
+
+    // If VPQ is full --> stall 
+    if (isFull()) {
+        return true;
+    }
+    else if (isEmpty()) {
+        free_entries = size;
+    }
+    // If head and tail are in the same phase, tail is ahead of head
+    else if (head_phase_bit == tail_phase_bit) {
+        free_entries = size - (tail - head);
+    }
+    // If head and tail are in different phases, head is ahead of tail
+    else if (head_phase_bit != tail_phase_bit) {
+        free_entries = head - tail;
+    }
+    // Should never reach here if VPQ is properly managed
+    else {
+        free_entries = static_cast<uint64_t>(-1); 
+        assert(false);
+    }
+
+    // Check if there is enough space for the bundle of instructions.
+    if (free_entries < bundle_inst) {
+        return true; 
+    }
+    return false; 
+}
+
+
 //-------------------------------------------------------------------
 // Additional functions to support value prediction in the pipeline
 //-------------------------------------------------------------------
@@ -130,6 +173,24 @@ bool get_confident_prediction(uint64_t pc, uint64_t& predicted_value) {
     return SVP.getPrediction(pc, predicted_value);
 }
 
-void send_predicted_value_to_issue_queue(uint64_t logical_register, uint64_t predicted_value) {
-    // Implementation goes here
+bool isEligible(uint64_t pc, bool eligibility) {
+    if (eligibility) {
+        // If the instruction is a branch, it's not eligible for value prediction
+        return false;
+    }
+
+    // Search for the entry with the given PC.
+    for (uint64_t i = 0; i < SVP.size; ++i) {
+        if (SVP.table[i].pc == pc) {
+            // Check if the confidence level of the prediction is saturated.
+            return SVP.table[i].confidence >= CONF_MAX;
+        }
+    }
+    return false;
 }
+
+
+
+
+
+
