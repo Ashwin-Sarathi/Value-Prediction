@@ -373,6 +373,9 @@ pipeline_t::pipeline_t(
   fprintf(stats_log, "IBP_BHR_LENGTH = %d\n", IBP_BHR_LENGTH);
   fprintf(stats_log, "ENABLE_TRACE_CACHE = %d\n", (ENABLE_TRACE_CACHE ? 1 : 0));
 
+  fprintf(stats_log, "\n=== VALUE PREDICTOR ============================================================\n\n");
+  fprintf(stats_log, "VALUE PREDICTOR = %s\n", (PERFECT_VALUE_PREDICTION ? "perfect" : "stride (Project 4 spec. implementation)"));
+
   fprintf(stats_log, "\n=== INTERNAL SIMULATOR STRUCTURES ===============================================\n\n");
 
   fprintf(stats_log, "PAYLOAD_BUFFER_SIZE = %d\n", PAY.get_size());
