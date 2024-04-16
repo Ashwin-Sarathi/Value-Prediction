@@ -1,12 +1,7 @@
-#include <stdlib.h>
-#include <cinttypes>
-
-#include "histogram.h"
-#include "mmu.h"
-#include "pipeline.h"
-#include "trap.h"
 #include "value_predictor.h"
-#include "parameters.h"
+#include <algorithm>
+#include <cassert>
+#include <iostream>
 
 // vp::vp() {
 

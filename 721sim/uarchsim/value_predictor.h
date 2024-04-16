@@ -1,80 +1,65 @@
 #ifndef VALUE_PREDICTOR_H
 #define VALUE_PREDICTOR_H
 
-#include <cstdint>
+#include <inttypes.h>
 #include <vector>
-#include <queue>
-#include <unordered_map>
+#include "parameters.h"
 
-using namespace std; 
+/////////////////////////////////////////////////////////////////////
+// Structure 1: Stride Value Predictor Entry (SVP Entry)
+/////////////////////////////////////////////////////////////////////
+struct SVPEntry {
+    uint64_t tag;             // Program Counter as the tag
+    uint64_t last_value;      // Last retired value 
+    int64_t stride;           // Stride 
+    unsigned int confidence;  // Confidence counter
+    unsigned int instance;    // Instance number in the pipeline
+};
 
-// Maximum confidence level for prediction
-const unsigned int CONF_MAX = 3;
-const unsigned int REPLACE_THRESHOLD = 1; // Threshold to replace the prediction
+/////////////////////////////////////////////////////////////////////
+// Structure 2: Value Prediction Queue (VPQ) Entry
+/////////////////////////////////////////////////////////////////////
+struct VPQEntry {
+    uint64_t pc;              // Program Counter associated with this prediction
+    uint64_t computed_value;  // Computed value for prediction
+};
 
-	/////////////////////////////////////////////////////////////////////
-	// Structure 1: Value Prediction Queue (VPQ) 
-	/////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////
+// Class: SVP_VPQ
+/////////////////////////////////////////////////////////////////////
+class SVP_VPQ {
+    private:
+        SVPEntry *svp_table;     // Table of SVP entries
+        VPQEntry *vpq_queue;     // VPQ entries
+        uint64_t svp_size;       // Size of the SVP table
+        uint64_t vpq_size;       // Size of the VPQ
+        uint64_t vpq_head, vpq_tail; // Head and tail indices for the VPQ
+        bool vpq_head_phase_bit, vpq_tail_phase_bit; // Phase bits for head and tail of VPQ
 
-    // Define the structure for a value prediction entry.
-    struct ValuePredictionEntry {
-        uint64_t tag;             // The tag of the instruction
-        unsigned int confidence;  // Confidence counter (saturates at 3)
-        uint64_t retired_value;   // The last retired value of the instruction
-        int64_t stride;          // The stride between consecutive values
-        unsigned int instance;    // Latest Instance number in the pipeline
-    };
-
-    struct ValuePredictionQueue {
-        uint64_t head, tail;                
-        uint64_t size;                       // Size of the value prediction queue
-        uint64_t head_phase_bit, tail_phase_bit; // Phase bits to distinguish full/empty states when head equals tail
-        ValuePredictionEntry* queue;         // Array of value prediction entries
-
-
+    public:
         // Constructor and Destructor
-        ValuePredictionQueue(uint64_t size);
-        ~ValuePredictionQueue();
+        SVP_VPQ(uint64_t svp_index_bits, uint64_t vpq_entries);
+        ~SVP_VPQ();
 
-        // Additional methods
-        void enqueue(const ValuePredictionEntry& entry);
-        bool dequeue(ValuePredictionEntry& entry);
-        bool isConfidentPrediction(uint64_t tag) const;
-        uint64_t getPredictedValue(uint64_t tag) const;
-        void updatePrediction(uint64_t tag, uint64_t new_value, unsigned int new_confidence, uint64_t new_stride);
-        void resetPrediction(uint64_t tag);
-        void trainOrReplace(uint64_t tag, uint64_t value); // Trains or replaces the entry at retirement
-        bool getPrediction(uint64_t tag, uint64_t &predicted_value); // Provides a prediction if available
-    };
+        // SVP Operations
+        void trainOrReplace(uint64_t pc, uint64_t value); // Train or replace the SVP entry
+        bool getPrediction(uint64_t pc, uint64_t& predicted_value); // Retrieve prediction if confidence is high
+        bool getOraclePrediction(uint64_t pc, uint64_t& predicted_value, uint64_t actual_value); // Retrieve oracle prediction 
+        unsigned int countVPQInstances(uint64_t pc); 
+        uint64_t extractIndex(uint64_t pc); 
+        uint64_t extractTag(uint64_t pc); 
 
-    //ValuePredictionQueue vpQueue; 
+        // VPQ Operations
+        bool enqueue(uint64_t pc);
+        bool dequeue(uint64_t& pc);
+        bool isVPQFull() const;
+        bool isVPQEmpty() const;
+        bool stallVPQ(uint64_t bundle_inst);
 
+        // Additional functions to support value prediction in the pipeline
+        bool getConfidentPrediction(uint64_t pc, uint64_t& predicted_value);
+        bool isEligible(uint64_t pc, bool eligibility, bool destination_register);
+        bool getOracleConfidentPrediction(uint64_t pc, uint64_t& predicted_value, uint64_t actual_value);
+};
 
-
-	/////////////////////////////////////////////////////////////////////
-	// Structure 2: Stride Value Predictor (SVP) 
-	/////////////////////////////////////////////////////////////////////
-
-
-
-
-
-
-
-    /////////////////////////////////////////////////////////////////////
-    // Additional functions to support value prediction in the pipeline
-    /////////////////////////////////////////////////////////////////////
-
-    //***************************************************************
-    //Rename Stage
-    //***************************************************************
-
-    //Call from the rename stage to get predicted value
-    bool get_confident_prediction(uint64_t logical_register, uint64_t& predicted_value);
-
-// class vp {
-//     public:
-//     vp();
-//     void vp_dump_stats(FILE* fp);
-// };
-#endif
+#endif // VALUE_PREDICTOR_H

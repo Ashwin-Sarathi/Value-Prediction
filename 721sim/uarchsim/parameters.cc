@@ -1,7 +1,7 @@
 #include <cinttypes>
 #include "fu.h"
 
-// TEST VP PARAMS - REMOVE LATER
+// TEST VP STATS PARAMS - REMOVE LATER
 uint64_t vpmeas_ineligible = 0;
 uint64_t vpmeas_ineligible_type = 0;
 uint64_t vpmeas_ineligible_drop = 0;
@@ -11,6 +11,21 @@ uint64_t vpmeas_conf_corr = 0;
 uint64_t vpmeas_conf_incorr = 0;
 uint64_t vpmeas_unconf_corr = 0;
 uint64_t vpmeas_unconf_incorr = 0;
+
+// SVP Configurations
+int vpq_size = 0;
+bool oracle_confidence = 0;
+int svp_index_bits = 0;
+int svp_tag_bits = 0;
+int svp_conf_max = 0;
+int svp_conf_inc = 0;
+int svp_conf_dec = 0;
+int svp_replace_stride = 0;
+int svp_replace = 0;
+bool svp_predict_int_alu = 0;
+bool svp_predict_fp_alu = 0;
+bool svp_predict_load = 0;
+bool vpq_full_policy = 0;
 
 // Pipe control
 uint32_t PIPE_QUEUE_SIZE  = 8192;

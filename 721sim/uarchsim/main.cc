@@ -181,6 +181,35 @@ static void set_perfect_value_prediction(const char* config) {
    }
 }
 
+static void set_svp_flags(const char* config) {
+   uint64_t temp_oracle_confidence, temp_svp_predict_int_alu, temp_svp_predict_fp_alu, temp_svp_predict_load, temp_vpq_full_policy;
+   if (sscanf(config, "%d,%lu,%d,%d,%d,%d,%d,%d,%d,%lu,%lu,%lu,%lu",
+                            &vpq_size,
+                            &temp_oracle_confidence,
+                            &svp_index_bits,
+                            &svp_tag_bits,
+                            &svp_conf_max,
+                            &svp_conf_inc,
+                            &svp_conf_dec,
+                            &svp_replace_stride,
+                            &svp_replace,
+                            &temp_svp_predict_int_alu,
+                            &temp_svp_predict_fp_alu,
+                            &temp_svp_predict_load,
+                            &temp_vpq_full_policy) != 13) {
+      fprintf(stderr, "Incorrect usage of --vp-svp\n");
+      fprintf(stderr, "Format: --vp-svp=<vpq_size>,<oracle_confidence>,<svp_index_bits>,<svp_tag_bits>,<svp_conf_max>,<svp_conf_inc>,<svp_conf_dec>,<svp_replace_stride>,<svp_replace>,<svp_predict_int_alu>,<svp_predict_fp_alu>,<svp_predict_load>,<vpq_full_policy>\n");
+      exit(-1);
+   }
+   else {
+      oracle_confidence = (temp_oracle_confidence ? true : false);
+      svp_predict_int_alu = (temp_svp_predict_int_alu ? true : false);
+      svp_predict_fp_alu = (temp_svp_predict_fp_alu ? true : false);
+      svp_predict_load = (temp_svp_predict_load ? true : false);
+      vpq_full_policy = (temp_vpq_full_policy ? true : false);
+   }
+}
+
 static void set_mdp_flags(const char* config) {
    uint64_t mdp_model, mdp_ctr_max;
    if (sscanf(config, "%lu,%lu", &mdp_model, &mdp_ctr_max) != 2) {
@@ -396,6 +425,7 @@ int main(int argc, char** argv)
   parser.option(0, "perf", 1, [&](const char* s){set_perfect_flags(s);});
   parser.option(0, "vp-enable", 1, [&](const char* s){enable_value_prediction(s);});
   parser.option(0, "vp-perf", 1, [&](const char* s){set_perfect_value_prediction(s);});
+  parser.option(0, "vp-svp", 1, [&](const char* s){ set_svp_flags(s);});
   parser.option(0, "cp"  , 1, [&](const char* s){NUM_CHECKPOINTS = atoi(s);});
 
   parser.option(0, "bq", 1, [&](const char* s){BQ_SIZE = atoi(s); AUTO_BQ_SIZE = false;});
@@ -464,6 +494,9 @@ int main(int argc, char** argv)
   /* opening banner */
 //   Testing command line arguments:   
 //   printf("VALUE PREDICTION ENABLED = %lu\n", VALUE_PREDICTION_ENABLED);
+     printf("vpq size = %d\n", vpq_size);
+     printf("svp_index_bits = %d\n", svp_index_bits);
+     printf("svp_predict_load = %d\n", svp_predict_load);
 
   /* 2/14/18 ER: Add banner for 721 simulator. */
   fprintf(stderr,

@@ -2,7 +2,7 @@
 #define PARAMETERS_H
 #include <cinttypes>
 
-// Test vp params - REMOVE LATER
+// Test vp stats params - REMOVE LATER
 extern uint64_t vpmeas_ineligible;
 extern uint64_t vpmeas_ineligible_type;
 extern uint64_t vpmeas_ineligible_drop;
@@ -19,6 +19,21 @@ extern unsigned int PIPE_QUEUE_SIZE;
 // Value Prediction
 extern bool VALUE_PREDICTION_ENABLED;
 extern bool PERFECT_VALUE_PREDICTION;
+
+// SVP Configurations
+extern int vpq_size;
+extern bool oracle_confidence;
+extern int svp_index_bits;
+extern int svp_tag_bits;
+extern int svp_conf_max;
+extern int svp_conf_inc;
+extern int svp_conf_dec;
+extern int svp_replace_stride;
+extern int svp_replace;
+extern bool svp_predict_int_alu;
+extern bool svp_predict_fp_alu;
+extern bool svp_predict_load;
+extern bool vpq_full_policy;
 
 // Oracle controls.
 extern bool PERFECT_BRANCH_PRED;
