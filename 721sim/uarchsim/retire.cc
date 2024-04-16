@@ -86,6 +86,14 @@ void pipeline_t::retire(size_t& instret) {
          //********************************************
          // FIX_ME #17b BEGIN
          //********************************************
+         if (PAY.buf[PAY.head].predict_flag) {
+            vpmeas_conf_corr ++;
+            vpmeas_eligible ++;
+         }
+         else {
+            vpmeas_ineligible++;
+            vpmeas_ineligible_type++;
+         }
          REN->commit(); 
          //********************************************
          // FIX_ME #17b END

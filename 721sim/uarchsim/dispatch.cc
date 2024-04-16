@@ -212,15 +212,9 @@ void pipeline_t::dispatch() {
       PAY.buf[index].predict_flag = false;
       if (PERFECT_VALUE_PREDICTION && PAY.buf[index].good_instruction && !branch_flag && PAY.buf[index].C_valid) {
          PAY.buf[index].predict_flag = true;
-         vpmeas_eligible++;
-         vpmeas_conf_corr++;
          actual = get_pipe()->peek(PAY.buf[index].db_index);
          PAY.buf[index].predicted_value = actual->a_rdst[0].value;
          REN->write(PAY.buf[index].C_phys_reg, PAY.buf[index].predicted_value);
-      }
-      else {
-         vpmeas_ineligible ++;
-         vpmeas_ineligible_type++;
       }
 
       // FIX_ME #9
