@@ -1,5 +1,6 @@
 #include "pipeline.h"
 
+
 //Has been fixed 
 
 ////////////////////////////////////////////////////////////////////////////////////
@@ -7,6 +8,9 @@
 // rename1: Get the next rename bundle from the FQ.
 // rename2: Rename the current rename bundle.
 ////////////////////////////////////////////////////////////////////////////////////
+
+
+
 
 void pipeline_t::rename1() {
    unsigned int i;
@@ -100,7 +104,9 @@ void pipeline_t::rename2() {
       if(PAY.buf[index].checkpoint){
          bundle_branch++; 
       }
-      if(isEligible(PAY.buf[index].pc, PAY.buf[index].branch_not_eligible)){
+
+      bool branch_flag = IS_BRANCH(PAY.buf[index].flags);
+      if(isEligible(PAY.buf[index].pc, branch_flag, PAY.buf[index].C_valid)){
          bundle_VPQ++;
       }
 

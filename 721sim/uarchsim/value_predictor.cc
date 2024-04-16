@@ -23,45 +23,68 @@ StrideValuePredictor::~StrideValuePredictor() {
 //-------------------------------------------------------------------
 
 void StrideValuePredictor::trainOrReplace(uint64_t pc, uint64_t value) {
-    // Calculate the index for the SVP entry using the PC
-    uint64_t index = pc % SVP.size; // Modulo operation to wrap around the table size
+    uint64_t index = extractIndex(pc); // Use a method to extract the index based on PC
+    uint64_t tag = extractTag(pc); // Use a method to extract the tag based on PC
 
-    // If PC tags match or if the confidence level is 0, it needs to be replaced
-    if (SVP.table[index].pc == pc || SVP.table[index].confidence == 0) {
-        // If tag match or entry is unused, train the existing entry
-
-        // Check if the current entry has the same stride as previous
-        int64_t new_stride = value - SVP.table[index].last_value;
-
-        if (SVP.table[index].stride == new_stride) {
-            // If its the same stride -->  increase confidence while not exceeding CONF_MAX
-            if (SVP.table[index].confidence < CONF_MAX) {
-                SVP.table[index].confidence++;
-            }
+    if (table[index].tag == tag || table[index].tag == 0) {        //SVP hit or no tag
+        // Existing entry, check for stride consistency
+        int64_t new_stride = value - table[index].last_value;
+        if (table[index].stride == new_stride) {
+            // If stride hasn't changed, potentially increase confidence
+            table[index].confidence = min(table[index].confidence + svp_conf_inc, svp_conf_max);
         } else {
-            // If the stride has changed --> set the new stride and reset confidence
-            SVP.table[index].stride = new_stride;
-            SVP.table[index].confidence = 1; // Reset confidence to 1 as this is a new pattern
+            // New stride observed
+            if (table[index].confidence <= svp_replace_stride) {
+                // Only update stride if confidence is less than or equal to the replace_stride threshold
+                table[index].stride = new_stride;
+                table[index].confidence = (svp_conf_dec == 0) ? 0 : max(table[index].confidence - svp_conf_dec, 0u);
+            }
         }
+        table[index].last_value = value;
 
-        // Update last retired value and instance count
-        SVP.table[index].last_value = value;
-        SVP.table[index].instance = 1; // instance needs to be reset to 1 for a new observationas since we saw a new value
-
-    } else if (SVP.table[index].confidence <= REPLACE_THRESHOLD) {
-        // If the entry's confidence is less than or equal to threashold to replace --> replace the old prediction with the new one.
-
-        SVP.table[index].pc = pc;
-        SVP.table[index].last_value = value;
-        SVP.table[index].stride = 0; // Initilaze the stride to 0
-        SVP.table[index].confidence = 1; // Starting confidence for a new prediction
-        SVP.table[index].instance = 1; // Start with the first instance
+        // Decrement the instance counter
+        if (table[index].instance > 0) {
+            table[index].instance--;
+        }
+    } else {
+        //Replacing Entry 
+        // Entry is either unused or has low confidence
+        if (table[index].confidence <= svp_replace) {
+            table[index].tag = tag;
+            table[index].last_value = value;
+            table[index].stride = 0; // Initialize stride to 0 on new allocation
+            table[index].confidence = 0; // Start with 0 confidence
+            table[index].instance = countVPQInstances(pc);  // New entry, set instance to 1
+        }
     }
 }
 
+unsigned int StrideValuePredictor::countVPQInstances(uint64_t pc) {
+    unsigned int count = 0;
+    for (unsigned int i = VPQ.head; i != VPQ.tail; i = (i + 1) % VPQ.size) {
+        if (VPQ.queue[i].pc == pc) {
+            count++;
+        }
+        // detect wrap-around in the VPQ.
+        if (i == VPQ.tail && VPQ.head_phase_bit != VPQ.tail_phase_bit) break;
+    }
+    return count;
+}
+
+//Extract index from the PC, based on the number of index bits
+uint64_t StrideValuePredictor::extractIndex(uint64_t pc) {
+    return (pc >> 2) & ((1ULL << svp_index_bits) - 1);
+}
+
+//Extract tag from the PC, based on the number of tag bits
+uint64_t StrideValuePredictor::extractTag(uint64_t pc) {
+    return (pc >> (2 + svp_index_bits)) & ((1ULL << svp_tag_bits) - 1);
+}
+
 bool StrideValuePredictor::getPrediction(uint64_t pc, uint64_t& predicted_value) {
+    uint64_t tag = extractTag(pc); // Use a method to extract the tag based on PC
     for (uint64_t i = 0; i < SVP.size; ++i) {
-        if (SVP.table[i].pc == pc && SVP.table[i].confidence >= CONF_MAX) {
+        if (SVP.table[i].tag == tag && SVP.table[i].confidence >= svp_conf_max) {
             predicted_value = SVP.table[i].last_value + (SVP.table[i].stride * SVP.table[i].instance);
             SVP.table[i].instance++;            //increment the instance 
             return true;
@@ -173,17 +196,26 @@ bool get_confident_prediction(uint64_t pc, uint64_t& predicted_value) {
     return SVP.getPrediction(pc, predicted_value);
 }
 
-bool isEligible(uint64_t pc, bool eligibility) {
+bool isEligible(uint64_t pc, bool eligibility, bool destination_register) {
+    
+    //check for destination register
+    if(!destination_register){
+        return false; 
+    }
+
+    //check for branches 
     if (eligibility) {
         // If the instruction is a branch, it's not eligible for value prediction
         return false;
     }
 
-    // Search for the entry with the given PC.
-    for (uint64_t i = 0; i < SVP.size; ++i) {
-        if (SVP.table[i].pc == pc) {
-            // Check if the confidence level of the prediction is saturated.
-            return SVP.table[i].confidence >= CONF_MAX;
+    if(enable_value_prediction){
+        // Search for the entry with the given PC and check for confidence
+        for (uint64_t i = 0; i < SVP.size; ++i) {
+            if (SVP.table[i].pc == pc) {
+                // Check if the confidence level of the prediction is saturated.
+                return SVP.table[i].confidence >= CONF_MAX;
+            }
         }
     }
     return false;

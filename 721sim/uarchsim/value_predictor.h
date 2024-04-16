@@ -13,7 +13,7 @@ const unsigned int REPLACE_THRESHOLD = 1; // Threshold to replace a prediction e
 // Structure 1: Stride Value Predictor Entry (SVP Entry)
 /////////////////////////////////////////////////////////////////////
 struct SVPEntry {
-    uint64_t pc;               // Program Counter as the tag
+    uint64_t tag;               // Program Counter as the tag
     uint64_t last_value;            // Last retired value 
     int64_t stride;            // Stride 
     unsigned int confidence;   // Confidence counter
@@ -34,6 +34,10 @@ struct StrideValuePredictor {
     // SVP Operations
     void trainOrReplace(uint64_t pc, uint64_t value); // Train or replace the SVP entry
     bool getPrediction(uint64_t pc, uint64_t& predicted_value); // Retrieve prediction if confidence is high
+    unsigned int countVPQInstances(uint64_t pc); 
+    uint64_t extractIndex(uint64_t pc); 
+    uint64_t extractTag(uint64_t pc); 
+
 };
 
 StrideValuePredictor SVP(svp_index_bits); 
@@ -74,8 +78,6 @@ ValuePredictionQueue VPQ(vpq_size);
 bool get_confident_prediction(uint64_t pc, uint64_t& predicted_value);
 
 //Get Eligible instructions
-bool isEligible(uint64_t pc, bool eligibility);
-
-//Increment VPQ entry and instance of SVP: train or replace here 
+bool isEligible(uint64_t pc, bool eligibility, bool destination_register);
 
 #endif

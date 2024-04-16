@@ -81,6 +81,8 @@ void pipeline_t::execute(unsigned int lane_number) {
                 IQ.wakeup(PAY.buf[index].C_phys_reg);
                 REN->set_ready(PAY.buf[index].C_phys_reg);
                 REN->write(PAY.buf[index].C_phys_reg, PAY.buf[index].C_value.dw);
+
+                //write to VPQ entry
             }
 
             //********************************************
