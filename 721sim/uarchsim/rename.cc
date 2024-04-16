@@ -13,6 +13,7 @@
 
 
 void pipeline_t::rename1() {
+
    unsigned int i;
    unsigned int rename1_bundle_width;
 
@@ -195,13 +196,28 @@ void pipeline_t::rename2() {
       uint64_t predicted_value;
       if (PAY.buf[index].C_valid) {
 
+         bool branch_flag = IS_BRANCH(PAY.buf[index].flags);
+         db_t* actual_value;
          //If it reaches to this stage, that means its an eligible instruction with a destination register 
          //Whether this hits in the SVP or not, the instructions needs an entry in the VPQ
          // Enqueue the prediction to the VPQ
          VPQ.enqueue(PAY.buf[index].pc);
 
-         // Check for a confident prediction for the logical destination register
-         if (get_confident_prediction(PAY.buf[index].pc, predicted_value)) {
+         //oracle confidence 
+         if(oracle_confidence){
+            if (PAY.buf[index].good_instruction && !branch_flag) {
+               PAY.buf[index].predict_flag = true;
+               actual_value = get_pipe()->peek(PAY.buf[index].db_index);
+               if(get_oracle_confident_prediction(PAY.buf[index].pc, predicted_value, actual_value->a_rdst[0].value)){
+                  PAY.buf[index].C_phys_reg = REN->rename_rdst(PAY.buf[index].C_log_reg);
+                  PAY.buf[index].predicted_value = predicted_value; // Update the predicted value in the payload
+                  PAY.buf[index].predict_flag = true; 
+               }
+            }
+         }
+
+         //Real confidence: check for a confident prediction for the logical destination register & 
+         if ((get_confident_prediction(PAY.buf[index].pc, predicted_value)) && !oracle_confidence) {
             // A confident prediction is available
             //Instance is incremented within get_confident_prediction
             PAY.buf[index].C_phys_reg = REN->rename_rdst(PAY.buf[index].C_log_reg);

@@ -34,6 +34,7 @@ struct StrideValuePredictor {
     // SVP Operations
     void trainOrReplace(uint64_t pc, uint64_t value); // Train or replace the SVP entry
     bool getPrediction(uint64_t pc, uint64_t& predicted_value); // Retrieve prediction if confidence is high
+    bool getOraclePrediction(uint64_t pc, uint64_t& predicted_value, uint64_t actual_value); // Retrieve oracle prediction 
     unsigned int countVPQInstances(uint64_t pc); 
     uint64_t extractIndex(uint64_t pc); 
     uint64_t extractTag(uint64_t pc); 
@@ -79,5 +80,7 @@ bool get_confident_prediction(uint64_t pc, uint64_t& predicted_value);
 
 //Get Eligible instructions
 bool isEligible(uint64_t pc, bool eligibility, bool destination_register);
+
+bool get_oracle_confident_prediction(uint64_t pc, uint64_t& predicted_value, uint64_t actual_value);
 
 #endif

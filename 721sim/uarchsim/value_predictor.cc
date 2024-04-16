@@ -93,6 +93,27 @@ bool StrideValuePredictor::getPrediction(uint64_t pc, uint64_t& predicted_value)
     return false;
 }
 
+
+bool StrideValuePredictor::getOraclePrediction(uint64_t pc, uint64_t& predicted_value, uint64_t actual_value) {
+    uint64_t tag = extractTag(pc); // Use a method to extract the tag based on PC
+    int correct; 
+
+    for (uint64_t i = 0; i < SVP.size; ++i) {
+        if (SVP.table[i].tag == tag) {          //Generate a prediction every time we get an SVP hit
+            predicted_value = SVP.table[i].last_value + (SVP.table[i].stride * SVP.table[i].instance);
+            SVP.table[i].instance++;            //increment the instance 
+            if(predicted_value == actual_value){
+                correct++; 
+            } else {
+                predicted_value = actual_value; 
+            }
+            return true;
+        }
+    }
+    return false;
+}
+
+
 //-------------------------------------------------------------------
 // Constructor and Destructor for ValuePredictionQueue
 //-------------------------------------------------------------------
@@ -197,7 +218,22 @@ bool get_confident_prediction(uint64_t pc, uint64_t& predicted_value) {
 }
 
 bool isEligible(uint64_t pc, bool eligibility, bool destination_register) {
-    
+
+
+    //perfect value prediction
+    //Must have a destination register 
+    //Should not be a branch 
+
+    //Oracle 
+    //Must have a destination register 
+    //Should not be a branch 
+
+    //Normal
+    //Must have a destination register 
+    //Should not be a branch 
+    //Should be confident
+
+    uint64_t tag = SVP.extractTag(pc); // Use a method to extract the tag based on PC
     //check for destination register
     if(!destination_register){
         return false; 
@@ -212,13 +248,17 @@ bool isEligible(uint64_t pc, bool eligibility, bool destination_register) {
     if(enable_value_prediction){
         // Search for the entry with the given PC and check for confidence
         for (uint64_t i = 0; i < SVP.size; ++i) {
-            if (SVP.table[i].pc == pc) {
+            if (SVP.table[i].tag == tag) {
                 // Check if the confidence level of the prediction is saturated.
-                return SVP.table[i].confidence >= CONF_MAX;
+                return SVP.table[i].confidence >= svp_conf_max;
             }
         }
     }
     return false;
+}
+
+bool get_oracle_confident_prediction(uint64_t pc, uint64_t& predicted_value, uint64_t actual_value) {
+    return SVP.getOraclePrediction(pc, predicted_value, actual_value);
 }
 
 
