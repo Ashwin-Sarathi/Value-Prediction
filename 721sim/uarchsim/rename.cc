@@ -1,5 +1,6 @@
 #include "pipeline.h"
 
+//Has been fixed 
 
 //Has been fixed 
 
@@ -229,7 +230,7 @@ void pipeline_t::rename2() {
          }
       }
 
-   
+
       //********************************************
       // FIX_ME #3 END
       //********************************************

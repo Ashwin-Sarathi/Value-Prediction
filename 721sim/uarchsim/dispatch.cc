@@ -205,6 +205,17 @@ void pipeline_t::dispatch() {
       // FIX_ME #8 END
       //********************************************
 
+      // If the instruction is value predicted, prediction must be fed in this stage
+      // As long as the mode is perfect value prediction, the instruction is good, it is not a branch and it has a valid destination, 
+      // it is predicted.
+      // For perfect value prediction, we grab this value from the functional simulator and feed it to the destination physical register.
+      if (PERFECT_VALUE_PREDICTION && PAY.buf[index].good_instruction && !branch_flag && PAY.buf[index].C_valid) {
+         PAY.buf[index].predict_flag = true;
+         actual = get_pipe()->peek(PAY.buf[index].db_index);
+         PAY.buf[index].predicted_value = actual->a_rdst[0].value;
+         REN->write(PAY.buf[index].C_phys_reg, PAY.buf[index].predicted_value);
+      }
+
       // FIX_ME #9
       // Clear the ready bit of the instruction's destination register.
       // This is needed to synchronize future consumers.
@@ -230,16 +241,25 @@ void pipeline_t::dispatch() {
       //Check for predicted values 
       //*******************************************
 
-      if (PAY.buf[index].C_valid) {
-         if (PAY.buf[index].predict_flag == true) {
-            // Write the predicted value into the physical register file.
-            REN->write(PAY.buf[index].C_phys_reg, PAY.buf[index].predicted_value);
+//       if (PAY.buf[index].C_valid) {
+//          if (PAY.buf[index].predict_flag == true) {
+//             // Write the predicted value into the physical register file.
+//             REN->write(PAY.buf[index].C_phys_reg, PAY.buf[index].predicted_value);
 
-            // Set the ready bit of the predicted destination register.
+//             // Set the ready bit of the predicted destination register.
+//             REN->set_ready(PAY.buf[index].C_phys_reg);
+//          } else {
+//             // Clear the ready bit of non-predicted destination registers, like usual
+//             REN->clear_ready(PAY.buf[index].C_phys_reg);
+
+      // Sets ready bit of PRF if the destination register is value predicted.
+      // Clears the ready bit of PRF if the destination is not value predicted.
+      if(PAY.buf[index].C_valid){
+         if (PAY.buf[index].predict_flag) {
             REN->set_ready(PAY.buf[index].C_phys_reg);
-         } else {
-            // Clear the ready bit of non-predicted destination registers, like usual
-            REN->clear_ready(PAY.buf[index].C_phys_reg);
+         }
+         else {
+            REN->clear_ready(PAY.buf[index].C_phys_reg); 
          }
       }
 

@@ -77,12 +77,19 @@ void pipeline_t::execute(unsigned int lane_number) {
             //********************************************
             
             //use the write function from the renamer to write a value into a physical register. Input: Physical register & value(which is the doubleword here)
-            if (PAY.buf[index].C_valid && hit && !PAY.buf[index].predict_flag){
+
+           if (PAY.buf[index].C_valid && hit && !PAY.buf[index].predict_flag){
                 IQ.wakeup(PAY.buf[index].C_phys_reg);
                 REN->set_ready(PAY.buf[index].C_phys_reg);
                 REN->write(PAY.buf[index].C_phys_reg, PAY.buf[index].C_value.dw);
 
                 //write to VPQ entry
+// =======
+//             if (PAY.buf[index].C_valid && hit){
+//                 IQ.wakeup(PAY.buf[index].C_phys_reg);
+//                 REN->set_ready(PAY.buf[index].C_phys_reg);
+//                 REN->write(PAY.buf[index].C_phys_reg, PAY.buf[index].C_value.dw);
+// >>>>>>> ashwin
             }
 
             //********************************************
@@ -220,7 +227,9 @@ void pipeline_t::execute(unsigned int lane_number) {
 
          bool check = PAY.buf[index].C_valid &&  
                               !IS_LOAD(PAY.buf[index].flags) && 
-                              !IS_AMO(PAY.buf[index].flags) && !PAY.buf[index].predict_flag;
+                              !IS_AMO(PAY.buf[index].flags) && !PAY.buf[index].predict_flag &&
+                              !IS_AMO(PAY.buf[index].flags);
+// >>>>>>> ashwin
 
          if (check) {
             IQ.wakeup(PAY.buf[index].C_phys_reg);
