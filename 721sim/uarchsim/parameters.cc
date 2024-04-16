@@ -1,6 +1,17 @@
 #include <cinttypes>
 #include "fu.h"
 
+// TEST VP PARAMS - REMOVE LATER
+uint64_t vpmeas_ineligible = 0;
+uint64_t vpmeas_ineligible_type = 0;
+uint64_t vpmeas_ineligible_drop = 0;
+uint64_t vpmeas_eligible = 0;
+uint64_t vpmeas_miss = 0;
+uint64_t vpmeas_conf_corr = 0;
+uint64_t vpmeas_conf_incorr = 0;
+uint64_t vpmeas_unconf_corr = 0;
+uint64_t vpmeas_unconf_incorr = 0;
+
 // Pipe control
 uint32_t PIPE_QUEUE_SIZE  = 8192;
 

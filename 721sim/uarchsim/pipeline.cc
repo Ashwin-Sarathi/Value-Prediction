@@ -17,6 +17,7 @@
 #include <sys/stat.h>
 #include "parameters.h"
 #include <ctime>
+#include "value_predictor.h"
 
 #undef STATE
 #define STATE state
@@ -375,6 +376,10 @@ pipeline_t::pipeline_t(
 
   fprintf(stats_log, "\n=== VALUE PREDICTOR ============================================================\n\n");
   fprintf(stats_log, "VALUE PREDICTOR = %s\n", (PERFECT_VALUE_PREDICTION ? "perfect" : "stride (Project 4 spec. implementation)"));
+  fprintf(stats_log, "\nCOST ACCOUNTING\n");
+  if (PERFECT_VALUE_PREDICTION) {
+    fprintf(stats_log, "\tImpossible.\n");
+  }
 
   fprintf(stats_log, "\n=== INTERNAL SIMULATOR STRUCTURES ===============================================\n\n");
 
@@ -424,6 +429,19 @@ pipeline_t::~pipeline_t()
 
   FetchUnit->output(stats->get_counter("commit_count"), stats->get_counter("cycle_count"), stats_log);
   LSU.dump_stats(stats_log);
+  // PRINTING STATS FOR VALUE PREDICTOR
+    fprintf(stats_log, "VPU MEASUREMENTS-----------------------------------\n");
+
+    fprintf(stats_log, "vpmeas_ineligible\t\t:\t%lu\n", vpmeas_ineligible);
+    fprintf(stats_log, "\tvpmeas_ineligible_type:\t%lu\n", vpmeas_ineligible_type);
+    fprintf(stats_log, "\tvpmeas_ineligible_drop:\t%lu\n\n", vpmeas_ineligible_drop);
+
+    fprintf(stats_log, "vpmeas_eligible\t\t:\t%lu\n", vpmeas_eligible);
+    fprintf(stats_log, "\tvpmeas_miss:\t%lu\n", vpmeas_miss);
+    fprintf(stats_log, "\tvpmeas_conf_corr:\t%lu\n", vpmeas_conf_corr);
+    fprintf(stats_log, "\tvpmeas_conf_incorr:\t%lu\n", vpmeas_conf_incorr);
+    fprintf(stats_log, "\tvpmeas_unconf_corr:\t%lu\n", vpmeas_unconf_corr);
+    fprintf(stats_log, "\tvpmeas_unconf_incorr:\t%lu\n", vpmeas_unconf_incorr);
 
   #ifdef RISCV_MICRO_DEBUG
     fclose(this->fetch_log    );

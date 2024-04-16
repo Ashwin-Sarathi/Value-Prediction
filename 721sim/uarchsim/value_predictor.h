@@ -47,7 +47,7 @@ const unsigned int REPLACE_THRESHOLD = 1; // Threshold to replace the prediction
         bool getPrediction(uint64_t tag, uint64_t &predicted_value); // Provides a prediction if available
     };
 
-    ValuePredictionQueue vpQueue; 
+    //ValuePredictionQueue vpQueue; 
 
 
 
@@ -72,4 +72,9 @@ const unsigned int REPLACE_THRESHOLD = 1; // Threshold to replace the prediction
     //Call from the rename stage to get predicted value
     bool get_confident_prediction(uint64_t logical_register, uint64_t& predicted_value);
 
+// class vp {
+//     public:
+//     vp();
+//     void vp_dump_stats(FILE* fp);
+// };
 #endif

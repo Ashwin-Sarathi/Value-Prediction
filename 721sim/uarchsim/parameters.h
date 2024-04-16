@@ -2,6 +2,17 @@
 #define PARAMETERS_H
 #include <cinttypes>
 
+// Test vp params - REMOVE LATER
+extern uint64_t vpmeas_ineligible;
+extern uint64_t vpmeas_ineligible_type;
+extern uint64_t vpmeas_ineligible_drop;
+extern uint64_t vpmeas_eligible;
+extern uint64_t vpmeas_miss;
+extern uint64_t vpmeas_conf_corr;
+extern uint64_t vpmeas_conf_incorr;
+extern uint64_t vpmeas_unconf_corr;
+extern uint64_t vpmeas_unconf_incorr;
+
 // Pipe control
 extern unsigned int PIPE_QUEUE_SIZE;
 
