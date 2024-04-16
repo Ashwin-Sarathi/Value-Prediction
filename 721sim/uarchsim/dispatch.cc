@@ -242,7 +242,23 @@ void pipeline_t::dispatch() {
             REN->set_ready(PAY.buf[index].C_phys_reg);
          }
          else {
-            REN->clear_ready(PAY.buf[index].C_phys_reg); 
+            REN->clear_ready(PAY.buf[index].C_phys_reg);
+      //clear_ready function from the renamer class clears the ready bit of specfied physical register 
+      
+      //*******************************************
+      //Check for predicted values 
+      //*******************************************
+
+//       if (PAY.buf[index].C_valid) {
+//          if (PAY.buf[index].predict_flag == true) {
+//             // Write the predicted value into the physical register file.
+//             REN->write(PAY.buf[index].C_phys_reg, PAY.buf[index].predicted_value);
+
+//             // Set the ready bit of the predicted destination register.
+//             REN->set_ready(PAY.buf[index].C_phys_reg);
+//          } else {
+//             // Clear the ready bit of non-predicted destination registers, like usual
+//             REN->clear_ready(PAY.buf[index].C_phys_reg);
          }
       }
 

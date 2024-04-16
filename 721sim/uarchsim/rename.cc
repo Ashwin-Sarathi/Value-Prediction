@@ -2,13 +2,19 @@
 
 //Has been fixed 
 
+//Has been fixed 
+
 ////////////////////////////////////////////////////////////////////////////////////
 // The Rename Stage has two sub-stages:
 // rename1: Get the next rename bundle from the FQ.
 // rename2: Rename the current rename bundle.
 ////////////////////////////////////////////////////////////////////////////////////
 
+
+
+
 void pipeline_t::rename1() {
+
    unsigned int i;
    unsigned int rename1_bundle_width;
 
@@ -51,7 +57,7 @@ void pipeline_t::rename1() {
 void pipeline_t::rename2() {
    unsigned int i;
    unsigned int index;
-   unsigned int bundle_dst, bundle_branch;
+   unsigned int bundle_dst, bundle_branch, bundle_VPQ;
 
    // Stall the rename2 sub-stage if either:
    // (1) There isn't a current rename bundle.
@@ -66,6 +72,7 @@ void pipeline_t::rename2() {
    // Third stall condition: There aren't enough rename resources for the current rename bundle.
    bundle_dst = 0;
    bundle_branch = 0;
+   bundle_VPQ = 0; 
    for (i = 0; i < dispatch_width; i++) {
       if (!RENAME2[i].valid)
          break;			// Not a valid instruction: Reached the end of the rename bundle so exit loop.
@@ -76,6 +83,7 @@ void pipeline_t::rename2() {
       // FIX_ME #1
       // Count the number of instructions in the rename bundle that need a checkpoint (most branches).
       // Count the number of instructions in the rename bundle that have a destination register.
+      //Count the number of instructions in the VPQ
       // With these counts, you will be able to query the renamer for resource availability
       // (checkpoints and physical registers).
       //
@@ -97,6 +105,11 @@ void pipeline_t::rename2() {
       }
       if(PAY.buf[index].checkpoint){
          bundle_branch++; 
+      }
+
+      bool branch_flag = IS_BRANCH(PAY.buf[index].flags);
+      if(isEligible(PAY.buf[index].pc, branch_flag, PAY.buf[index].C_valid)){
+         bundle_VPQ++;
       }
 
       //********************************************
@@ -125,6 +138,9 @@ void pipeline_t::rename2() {
    }
    if(REN->stall_reg(bundle_dst)) {
          return;
+   }
+   if(VPQ.stall_VPQ(bundle_VPQ)){
+      return; 
    }
 
    //********************************************
@@ -174,11 +190,54 @@ void pipeline_t::rename2() {
 
       //The destination register is C
       //If valid, call rename_rdst function. Input: log_reg, the logical register to rename
-      if (PAY.buf[index].C_valid){
-        PAY.buf[index].C_phys_reg = REN->rename_rdst(PAY.buf[index].C_log_reg);
-      }
+//       if (PAY.buf[index].C_valid){
+//         PAY.buf[index].C_phys_reg = REN->rename_rdst(PAY.buf[index].C_log_reg);
+//       }
 
       //********************************************
+      // Predicting values of destination registers 
+      //********************************************
+
+      //The destination register is C
+      //If valid, call rename_rdst function. Input: log_reg, the logical register to rename
+
+      uint64_t predicted_value;
+      if (PAY.buf[index].C_valid) {
+
+         bool branch_flag = IS_BRANCH(PAY.buf[index].flags);
+         db_t* actual_value;
+         //If it reaches to this stage, that means its an eligible instruction with a destination register 
+         //Whether this hits in the SVP or not, the instructions needs an entry in the VPQ
+         // Enqueue the prediction to the VPQ
+         VPQ.enqueue(PAY.buf[index].pc);
+
+         //oracle confidence 
+         if(oracle_confidence){
+            if (PAY.buf[index].good_instruction && !branch_flag) {
+               PAY.buf[index].predict_flag = true;
+               actual_value = get_pipe()->peek(PAY.buf[index].db_index);
+               if(get_oracle_confident_prediction(PAY.buf[index].pc, predicted_value, actual_value->a_rdst[0].value)){
+                  PAY.buf[index].C_phys_reg = REN->rename_rdst(PAY.buf[index].C_log_reg);
+                  PAY.buf[index].predicted_value = predicted_value; // Update the predicted value in the payload
+                  PAY.buf[index].predict_flag = true; 
+               }
+            }
+         }
+
+         //Real confidence: check for a confident prediction for the logical destination register & 
+         if ((get_confident_prediction(PAY.buf[index].pc, predicted_value)) && !oracle_confidence) {
+            // A confident prediction is available
+            //Instance is incremented within get_confident_prediction
+            PAY.buf[index].C_phys_reg = REN->rename_rdst(PAY.buf[index].C_log_reg);
+            PAY.buf[index].predicted_value = predicted_value; // Update the predicted value in the payload
+            PAY.buf[index].predict_flag = true; 
+         } else {
+            // No confident prediction available
+            PAY.buf[index].C_phys_reg = REN->rename_rdst(PAY.buf[index].C_log_reg);
+         }
+      }
+
+         //********************************************
       // FIX_ME #3 END
       //********************************************
 

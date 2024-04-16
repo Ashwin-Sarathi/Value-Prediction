@@ -169,6 +169,11 @@ typedef struct {
    bool left;			// Relic of PISA ISA - no longer used.
    bool right;			// Relic of PISA ISA - no longer used.
 
+   //************************************************
+   //Branch Instruction Flag: Call, call indirect
+   //************************************************
+   bool branch_not_eligible; 
+
    ////////////////////////
    // Set by Rename Stage.
    ////////////////////////
@@ -191,6 +196,13 @@ typedef struct {
    unsigned int branch_ID;      // When a checkpoint is created for a branch,
                                 // this is the branch's ID (its bit position
                                 // in the Global Branch Mask).
+
+   //************************************************
+   //ADD predicted value to the destination register
+   //************************************************
+   uint64_t predicted_value;     //If confident, prediction is available
+
+   bool predict_flag;            //If true prediction, predicted_value is not empty
 
    ////////////////////////
    // Set by Dispatch Stage.

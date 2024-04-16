@@ -109,4 +109,21 @@ extern uint64_t stop_amt;
 extern uint64_t phase_interval;
 extern uint64_t verbose_phase_counters;
 
+
+//Value Prediction 
+extern unsigned int vpq_size;
+extern unsigned int oracle_confidence;
+extern unsigned int svp_index_bits;
+extern unsigned int svp_tag_bits;
+extern unsigned int svp_conf_max;
+extern unsigned int svp_conf_inc;
+extern unsigned int svp_conf_dec;
+extern unsigned int svp_replace_stride;
+extern unsigned int svp_replace;
+extern unsigned int svp_predict_int_alu;
+extern unsigned int svp_predict_fp_alu;
+extern unsigned int svp_predict_load;
+extern unsigned int vpq_full_policy;
+extern unsigned int enable_value_prediction;
+
 #endif //PARAMETERS_H
