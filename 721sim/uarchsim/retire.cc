@@ -402,6 +402,14 @@ bool pipeline_t::execute_csr() {
          // Write the result (old value of CSR) to the physical destination register.
          REN->set_ready(PAY.buf[index].C_phys_reg);
          REN->write(PAY.buf[index].C_phys_reg, PAY.buf[index].C_value.dw);
+
+         //Computed value: PAY.buf[index].C_value.dw
+         //<replace>, // Replacement confidence threshold. Only used if
+         // SVP has tags and when the tag mismatches while
+         // training: replace if conf <= replace.
+
+         //TRAIN & REPLACE 
+         SVP.trainOrReplace(PAY.buf[index].pc, PAY.buf[index].C_value.dw); 
       }
    }
    catch (trap_t& t) {
