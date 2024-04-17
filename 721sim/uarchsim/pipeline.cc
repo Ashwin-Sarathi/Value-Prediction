@@ -79,7 +79,8 @@ pipeline_t::pipeline_t(
   PAY(2*fetch_width + fq_size /* FETCH2, DECODE, FQ */ + 2*dispatch_width + rob_size /* RENAME2, DISPATCH, ROB */),
   FQ(fq_size,this),
   IQ(iq_size,iq_num_parts,this),
-  LSU(lq_size, sq_size, Tid, _mmu, this)
+  LSU(lq_size, sq_size, Tid, _mmu, this),
+  VPU(svp_index_bits, vpq_size)
 {
   unsigned int i, j, ex_depth;
 
@@ -279,6 +280,11 @@ pipeline_t::pipeline_t(
 
   LSU.set_l2_cache(L2C);
 
+  // ////////////////////////////////////////////////////////////
+  // // VPU
+  // ////////////////////////////////////////////////////////////
+  // VPU = new svp_vpq(svp_index_bits, vpq_size);
+
 
   // Declare and set the various knobs in the knobs database.
   // These will be printed in the stats.log file at the end of the run.
@@ -379,7 +385,7 @@ pipeline_t::pipeline_t(
   fprintf(stats_log, "\nCOST ACCOUNTING\n");
   if (VALUE_PREDICTION_ENABLED) {
     if (PERFECT_VALUE_PREDICTION) {
-      fprintf(stats_log, "\tImpossible.\n");
+      fprintf(stats_log, "  Impossible.\n");
     }
     else {
       int RISCV64_integer_size = 64;

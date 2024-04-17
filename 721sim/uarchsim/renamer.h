@@ -177,6 +177,8 @@ private:
        uint64_t head; 
        uint64_t head_phase_bit;
        uint64_t checkpointedGBM;
+	   uint64_t vpq_tail;
+	   bool		vpq_tail_phase_bit;
     };
 
     uint64_t smt_size;          //is equal to the number of entries in the rename map table
@@ -192,7 +194,7 @@ private:
 	void update_rename_map_table(uint64_t logical_register, uint64_t physical_register); //updates the mapping of a logical to a physical register in the rename map table
 	bool freelist_empty(); 
 	bool freelist_full(); 
-	void store_checkpoint(uint64_t branchID); 
+	void store_checkpoint(uint64_t branchID, uint64_t vpq_tail, bool vpq_tail_phase_bit); 
 	bool activelist_empty(); 
 	bool activelist_full(); 
 	void activelist_initalize(ActiveListEntry *entry);
@@ -318,7 +320,7 @@ public:
 	// 2. checkpointed Free List head pointer and its phase bit
 	// 3. checkpointed GBM
 	/////////////////////////////////////////////////////////////////////
-	uint64_t checkpoint();
+	uint64_t checkpoint(uint64_t vpq_tail, bool vpq_tail_phase_bit);
 
 	//////////////////////////////////////////
 	// Functions related to Dispatch Stage. //

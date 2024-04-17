@@ -86,7 +86,7 @@ void pipeline_t::retire(size_t& instret) {
          //********************************************
          // FIX_ME #17b BEGIN
          //********************************************
-         if (PAY.buf[PAY.head].predict_flag) {
+         if (PAY.buf[PAY.head].predict_flag) { // MIGHT HAVE TO CHANGE
             vpmeas_conf_corr ++;
             vpmeas_eligible ++;
          }

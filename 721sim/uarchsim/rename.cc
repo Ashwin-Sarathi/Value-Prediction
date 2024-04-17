@@ -51,7 +51,7 @@ void pipeline_t::rename1() {
 void pipeline_t::rename2() {
    unsigned int i;
    unsigned int index;
-   unsigned int bundle_dst, bundle_branch;
+   unsigned int bundle_dst, bundle_branch, bundle_VPQ;
 
    // Stall the rename2 sub-stage if either:
    // (1) There isn't a current rename bundle.
@@ -66,6 +66,7 @@ void pipeline_t::rename2() {
    // Third stall condition: There aren't enough rename resources for the current rename bundle.
    bundle_dst = 0;
    bundle_branch = 0;
+   bundle_VPQ = 0;
    for (i = 0; i < dispatch_width; i++) {
       if (!RENAME2[i].valid)
          break;			// Not a valid instruction: Reached the end of the rename bundle so exit loop.
@@ -98,6 +99,11 @@ void pipeline_t::rename2() {
       if(PAY.buf[index].checkpoint){
          bundle_branch++; 
       }
+
+      bool branch_flag = IS_BRANCH(PAY.buf[index].flags);
+      if(VPU.isEligible(PAY.buf[index].pc, branch_flag, PAY.buf[index].C_valid)){
+         bundle_VPQ++;
+      }      
 
       //********************************************
       // FIX_ME #1 END
@@ -222,7 +228,10 @@ void pipeline_t::rename2() {
       //The output of the function is the branch's ID
       //Store the ID 
       if (PAY.buf[index].checkpoint){
-        PAY.buf[index].branch_ID = REN->checkpoint();
+         uint64_t vpq_tail = 0;
+         bool vpq_tail_phase_bit = 0;
+         VPU.getTailForCheckpoint(vpq_tail, vpq_tail_phase_bit);
+         PAY.buf[index].branch_ID = REN->checkpoint(vpq_tail, vpq_tail_phase_bit);
       }
 
       //********************************************

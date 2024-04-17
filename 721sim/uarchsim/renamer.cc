@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <cassert>
 #include <iostream>
+// #include "pipeline.h"
 
 using namespace std; 
 
@@ -192,7 +193,7 @@ renamer:: renamer(uint64_t n_log_regs, uint64_t n_phys_regs, uint64_t n_branches
     }
 
 
-    uint64_t renamer:: checkpoint(){
+    uint64_t renamer:: checkpoint(uint64_t vpq_tail, bool vpq_tail_phase_bit){
 
         //1.Find a free bit and set the bit to 1
         uint64_t temp_gbm = GBM; 
@@ -217,7 +218,7 @@ renamer:: renamer(uint64_t n_log_regs, uint64_t n_phys_regs, uint64_t n_branches
 
 
         //2. Updating the shadow map table
-        store_checkpoint(temp_index);
+        store_checkpoint(temp_index, vpq_tail, vpq_tail_phase_bit);
 
         return temp_index; 
     }
@@ -577,7 +578,7 @@ renamer:: renamer(uint64_t n_log_regs, uint64_t n_phys_regs, uint64_t n_branches
         return false; 
     }
 
-    void renamer::store_checkpoint(uint64_t branchID) {
+    void renamer::store_checkpoint(uint64_t branchID, uint64_t vpq_tail, bool vpq_tail_phase_bit) {
         //1. Handling Errors: BranchID must be within the valid checkpoint range
         if (branchID >= total_checkpoints) {
             cerr << "Error: Invalid branch ID for checkpoint." << endl;
@@ -598,6 +599,10 @@ renamer:: renamer(uint64_t n_log_regs, uint64_t n_phys_regs, uint64_t n_branches
 
         //5. Store the GBM
         branchCheckpoint[branchID].checkpointedGBM = GBM;
+
+        //6. Store VPQ tail entry and tail phase bit
+        branchCheckpoint[branchID].vpq_tail = vpq_tail;
+        branchCheckpoint[branchID].vpq_tail_phase_bit = vpq_tail_phase_bit;
     }
 
     bool renamer:: activelist_empty(){

@@ -25,9 +25,9 @@ struct VPQEntry {
 };
 
 /////////////////////////////////////////////////////////////////////
-// Class: SVP_VPQ
+// Class: svp_vpq
 /////////////////////////////////////////////////////////////////////
-class SVP_VPQ {
+class svp_vpq {
     private:
         SVPEntry *svp_table;     // Table of SVP entries
         VPQEntry *vpq_queue;     // VPQ entries
@@ -38,8 +38,8 @@ class SVP_VPQ {
 
     public:
         // Constructor and Destructor
-        SVP_VPQ(uint64_t svp_index_bits, uint64_t vpq_entries);
-        ~SVP_VPQ();
+        svp_vpq(uint64_t svp_index_bits, uint64_t vpq_entries);
+        ~svp_vpq();
 
         // SVP Operations
         void trainOrReplace(uint64_t pc, uint64_t value); // Train or replace the SVP entry
@@ -51,10 +51,12 @@ class SVP_VPQ {
 
         // VPQ Operations
         bool enqueue(uint64_t pc);
-        bool dequeue(uint64_t& pc);
+        bool dequeue(uint64_t pc);
         bool isVPQFull() const;
         bool isVPQEmpty() const;
         bool stallVPQ(uint64_t bundle_inst);
+        uint64_t generateVPQEntryPC(uint64_t pc);
+        void getTailForCheckpoint(uint64_t &tail, bool &tail_phase_bit);
 
         // Additional functions to support value prediction in the pipeline
         bool getConfidentPrediction(uint64_t pc, uint64_t& predicted_value);

@@ -44,6 +44,8 @@
 
 #include "alu_ops.h"
 
+#include "value_predictor.h"	// VALUE PREDICTOR UNIT
+
 //////////////////////////////////////////////////////////////////////////////
 
 /* instruction flags */
@@ -249,6 +251,7 @@ private:
   friend class issue_queue;
   friend class lsu;
   friend class CacheClass;
+  friend class svp_vpq;
 
 
 	//void build_opcode_map();
@@ -357,6 +360,11 @@ private:
 	/////////////////////////////////////////////////////////////
 	CacheClass* L2C;
 	CacheClass* L3C;
+
+	/////////////////////////////////////////////////////////////
+	// Value Prediction Unit 
+	/////////////////////////////////////////////////////////////
+	svp_vpq VPU;
 
 	//////////////////////
 	// PRIVATE FUNCTIONS
