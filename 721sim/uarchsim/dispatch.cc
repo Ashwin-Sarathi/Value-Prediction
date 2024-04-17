@@ -210,7 +210,7 @@ void pipeline_t::dispatch() {
       // it is predicted.
       // For perfect value prediction, we grab this value from the functional simulator and feed it to the destination physical register.
       PAY.buf[index].predict_flag = false;
-      if (PERFECT_VALUE_PREDICTION && PAY.buf[index].good_instruction && !branch_flag && PAY.buf[index].C_valid) {
+      if (PERFECT_VALUE_PREDICTION && PAY.buf[index].good_instruction && !PAY.buf[index].checkpoint && PAY.buf[index].C_valid) {
          PAY.buf[index].predict_flag = true;
          actual = get_pipe()->peek(PAY.buf[index].db_index);
          PAY.buf[index].predicted_value = actual->a_rdst[0].value;
@@ -240,9 +240,12 @@ void pipeline_t::dispatch() {
       // Clears the ready bit of PRF if the destination is not value predicted.
       if(PAY.buf[index].C_valid){
          if (PAY.buf[index].predict_flag) {
+            // If predicted, prediction must be written into PRF and PRF ready bit must be set
+            REN->write(PAY.buf[index].C_phys_reg, PAY.buf[index].predicted_value);
             REN->set_ready(PAY.buf[index].C_phys_reg);
          }
          else {
+            // Clear ready bits of non predicted instructions
             REN->clear_ready(PAY.buf[index].C_phys_reg); 
          }
       }

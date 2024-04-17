@@ -101,10 +101,16 @@ void pipeline_t::rename2() {
          bundle_branch++; 
       }
 
-      bool branch_flag = IS_BRANCH(PAY.buf[index].flags);
-      if(VPU.isEligible(PAY.buf[index].pc, branch_flag, PAY.buf[index].C_valid)){
+      // bool branch_flag = IS_BRANCH(PAY.buf[index].flags);
+      if(VPU.isEligible(PAY.buf[index].pc, PAY.buf[index].checkpoint, PAY.buf[index].C_valid)){
          bundle_VPQ++;
-      }      
+         PAY.buf[index].vp_eligible = true;
+      }    
+      else {
+         PAY.buf[index].vp_eligible= false;
+         PAY.buf[index].vpq_flag = false;
+         PAY.buf[index].predict_flag = false;
+      }  
 
       //********************************************
       // FIX_ME #1 END
@@ -189,24 +195,26 @@ void pipeline_t::rename2() {
 
       //The destination register is C
       //If valid, call rename_rdst function. Input: log_reg, the logical register to rename
+      // if (PAY.buf[index].C_valid){
+      //   PAY.buf[index].C_phys_reg = REN->rename_rdst(PAY.buf[index].C_log_reg);
+      // }
 
       if (PAY.buf[index].C_valid) {
 
          uint64_t predicted_value;
-         bool branch_flag = IS_BRANCH(PAY.buf[index].flags);
          db_t* actual_value;
          
          //Only allocate if VPU is not full
          //if vpq_full_policy is 1 and VPU is full, don't allocate
-         if(!VPU.isVPQFull()){
+         if(!VPU.isVPQFull() && PAY.buf[index].vp_eligible){
             VPU.enqueue(PAY.buf[index].pc);
             PAY.buf[index].vpq_flag = true;
          } 
          
          //oracle confidence 
          if(oracle_confidence){
-            if (PAY.buf[index].good_instruction && !branch_flag) {
-
+            if (PAY.buf[index].good_instruction && !PAY.buf[index].checkpoint && PAY.buf[index].vp_eligible && PAY.buf[index].vpq_flag) {
+               assert(PAY.buf[index].vp_eligible && PAY.buf[index].vpq_flag);
                actual_value = get_pipe()->peek(PAY.buf[index].db_index);
                if(VPU.getOracleConfidentPrediction(PAY.buf[index].pc, predicted_value, actual_value->a_rdst[0].value)){
                   PAY.buf[index].C_phys_reg = REN->rename_rdst(PAY.buf[index].C_log_reg);
@@ -220,9 +228,10 @@ void pipeline_t::rename2() {
          }
 
          //Real confidence: check for a confident prediction for the logical destination register & 
-         if ((VPU.getConfidentPrediction(PAY.buf[index].pc, predicted_value)) && !oracle_confidence) {
+         if ((VPU.getConfidentPrediction(PAY.buf[index].pc, predicted_value)) && !oracle_confidence && PAY.buf[index].vp_eligible && PAY.buf[index].vpq_flag) {
             // A confident prediction is available
             //Instance is incremented within get_confident_prediction
+            assert(PAY.buf[index].vp_eligible && PAY.buf[index].vpq_flag);
             PAY.buf[index].C_phys_reg = REN->rename_rdst(PAY.buf[index].C_log_reg);
             PAY.buf[index].predicted_value = predicted_value; // Update the predicted value in the payload
             PAY.buf[index].predict_flag = true;

@@ -140,6 +140,7 @@ uint64_t svp_vpq::generateVPQEntryPC(uint64_t pc) {
     uint64_t tag = extractTag(pc);
     uint64_t index = extractIndex(pc);
     pc = (tag << svp_index_bits) | (index); 
+    return pc;
 }
 
 bool svp_vpq::enqueue(uint64_t pc) {
@@ -252,7 +253,7 @@ bool svp_vpq::isEligible(uint64_t pc, bool is_branch, bool destination_register)
                 return svp_table[i].confidence == svp_conf_max;
             }
         }
-    }
+    } // Do we need conf max to check whether this gets added to VPQ
     return true;
 }
 

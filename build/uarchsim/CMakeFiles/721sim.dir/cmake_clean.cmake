@@ -15,6 +15,7 @@ FILE(REMOVE_RECURSE
   "CMakeFiles/721sim.dir/histogram.cc.o"
   "CMakeFiles/721sim.dir/pipeline.cc.o"
   "CMakeFiles/721sim.dir/btb.cc.o"
+  "CMakeFiles/721sim.dir/value_predictor.cc.o"
   "CMakeFiles/721sim.dir/stats.cc.o"
   "CMakeFiles/721sim.dir/issue_queue.cc.o"
   "CMakeFiles/721sim.dir/schedule.cc.o"

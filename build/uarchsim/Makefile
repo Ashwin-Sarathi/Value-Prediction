@@ -979,6 +979,30 @@ tc.cc.s:
 	cd /mnt/ncsudrive/a/asarath/721/Value-Prediction/build && $(MAKE) -f uarchsim/CMakeFiles/721sim.dir/build.make uarchsim/CMakeFiles/721sim.dir/tc.cc.s
 .PHONY : tc.cc.s
 
+value_predictor.o: value_predictor.cc.o
+.PHONY : value_predictor.o
+
+# target to build an object file
+value_predictor.cc.o:
+	cd /mnt/ncsudrive/a/asarath/721/Value-Prediction/build && $(MAKE) -f uarchsim/CMakeFiles/721sim.dir/build.make uarchsim/CMakeFiles/721sim.dir/value_predictor.cc.o
+.PHONY : value_predictor.cc.o
+
+value_predictor.i: value_predictor.cc.i
+.PHONY : value_predictor.i
+
+# target to preprocess a source file
+value_predictor.cc.i:
+	cd /mnt/ncsudrive/a/asarath/721/Value-Prediction/build && $(MAKE) -f uarchsim/CMakeFiles/721sim.dir/build.make uarchsim/CMakeFiles/721sim.dir/value_predictor.cc.i
+.PHONY : value_predictor.cc.i
+
+value_predictor.s: value_predictor.cc.s
+.PHONY : value_predictor.s
+
+# target to generate assembly for a file
+value_predictor.cc.s:
+	cd /mnt/ncsudrive/a/asarath/721/Value-Prediction/build && $(MAKE) -f uarchsim/CMakeFiles/721sim.dir/build.make uarchsim/CMakeFiles/721sim.dir/value_predictor.cc.s
+.PHONY : value_predictor.cc.s
+
 writeback.o: writeback.cc.o
 .PHONY : writeback.o
 
@@ -1120,6 +1144,9 @@ help:
 	@echo "... tc.o"
 	@echo "... tc.i"
 	@echo "... tc.s"
+	@echo "... value_predictor.o"
+	@echo "... value_predictor.i"
+	@echo "... value_predictor.s"
 	@echo "... writeback.o"
 	@echo "... writeback.i"
 	@echo "... writeback.s"

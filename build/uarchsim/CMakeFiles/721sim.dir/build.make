@@ -420,9 +420,32 @@ uarchsim/CMakeFiles/721sim.dir/btb.cc.o.provides: uarchsim/CMakeFiles/721sim.dir
 
 uarchsim/CMakeFiles/721sim.dir/btb.cc.o.provides.build: uarchsim/CMakeFiles/721sim.dir/btb.cc.o
 
+uarchsim/CMakeFiles/721sim.dir/value_predictor.cc.o: uarchsim/CMakeFiles/721sim.dir/flags.make
+uarchsim/CMakeFiles/721sim.dir/value_predictor.cc.o: /mnt/ncsudrive/a/asarath/721/Value-Prediction/721sim/uarchsim/value_predictor.cc
+	$(CMAKE_COMMAND) -E cmake_progress_report /mnt/ncsudrive/a/asarath/721/Value-Prediction/build/CMakeFiles $(CMAKE_PROGRESS_17)
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building CXX object uarchsim/CMakeFiles/721sim.dir/value_predictor.cc.o"
+	cd /mnt/ncsudrive/a/asarath/721/Value-Prediction/build/uarchsim && /usr/bin/c++   $(CXX_DEFINES) $(CXX_FLAGS) -o CMakeFiles/721sim.dir/value_predictor.cc.o -c /mnt/ncsudrive/a/asarath/721/Value-Prediction/721sim/uarchsim/value_predictor.cc
+
+uarchsim/CMakeFiles/721sim.dir/value_predictor.cc.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/721sim.dir/value_predictor.cc.i"
+	cd /mnt/ncsudrive/a/asarath/721/Value-Prediction/build/uarchsim && /usr/bin/c++  $(CXX_DEFINES) $(CXX_FLAGS) -E /mnt/ncsudrive/a/asarath/721/Value-Prediction/721sim/uarchsim/value_predictor.cc > CMakeFiles/721sim.dir/value_predictor.cc.i
+
+uarchsim/CMakeFiles/721sim.dir/value_predictor.cc.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/721sim.dir/value_predictor.cc.s"
+	cd /mnt/ncsudrive/a/asarath/721/Value-Prediction/build/uarchsim && /usr/bin/c++  $(CXX_DEFINES) $(CXX_FLAGS) -S /mnt/ncsudrive/a/asarath/721/Value-Prediction/721sim/uarchsim/value_predictor.cc -o CMakeFiles/721sim.dir/value_predictor.cc.s
+
+uarchsim/CMakeFiles/721sim.dir/value_predictor.cc.o.requires:
+.PHONY : uarchsim/CMakeFiles/721sim.dir/value_predictor.cc.o.requires
+
+uarchsim/CMakeFiles/721sim.dir/value_predictor.cc.o.provides: uarchsim/CMakeFiles/721sim.dir/value_predictor.cc.o.requires
+	$(MAKE) -f uarchsim/CMakeFiles/721sim.dir/build.make uarchsim/CMakeFiles/721sim.dir/value_predictor.cc.o.provides.build
+.PHONY : uarchsim/CMakeFiles/721sim.dir/value_predictor.cc.o.provides
+
+uarchsim/CMakeFiles/721sim.dir/value_predictor.cc.o.provides.build: uarchsim/CMakeFiles/721sim.dir/value_predictor.cc.o
+
 uarchsim/CMakeFiles/721sim.dir/stats.cc.o: uarchsim/CMakeFiles/721sim.dir/flags.make
 uarchsim/CMakeFiles/721sim.dir/stats.cc.o: /mnt/ncsudrive/a/asarath/721/Value-Prediction/721sim/uarchsim/stats.cc
-	$(CMAKE_COMMAND) -E cmake_progress_report /mnt/ncsudrive/a/asarath/721/Value-Prediction/build/CMakeFiles $(CMAKE_PROGRESS_17)
+	$(CMAKE_COMMAND) -E cmake_progress_report /mnt/ncsudrive/a/asarath/721/Value-Prediction/build/CMakeFiles $(CMAKE_PROGRESS_18)
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building CXX object uarchsim/CMakeFiles/721sim.dir/stats.cc.o"
 	cd /mnt/ncsudrive/a/asarath/721/Value-Prediction/build/uarchsim && /usr/bin/c++   $(CXX_DEFINES) $(CXX_FLAGS) -o CMakeFiles/721sim.dir/stats.cc.o -c /mnt/ncsudrive/a/asarath/721/Value-Prediction/721sim/uarchsim/stats.cc
 
@@ -445,7 +468,7 @@ uarchsim/CMakeFiles/721sim.dir/stats.cc.o.provides.build: uarchsim/CMakeFiles/72
 
 uarchsim/CMakeFiles/721sim.dir/issue_queue.cc.o: uarchsim/CMakeFiles/721sim.dir/flags.make
 uarchsim/CMakeFiles/721sim.dir/issue_queue.cc.o: /mnt/ncsudrive/a/asarath/721/Value-Prediction/721sim/uarchsim/issue_queue.cc
-	$(CMAKE_COMMAND) -E cmake_progress_report /mnt/ncsudrive/a/asarath/721/Value-Prediction/build/CMakeFiles $(CMAKE_PROGRESS_18)
+	$(CMAKE_COMMAND) -E cmake_progress_report /mnt/ncsudrive/a/asarath/721/Value-Prediction/build/CMakeFiles $(CMAKE_PROGRESS_19)
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building CXX object uarchsim/CMakeFiles/721sim.dir/issue_queue.cc.o"
 	cd /mnt/ncsudrive/a/asarath/721/Value-Prediction/build/uarchsim && /usr/bin/c++   $(CXX_DEFINES) $(CXX_FLAGS) -o CMakeFiles/721sim.dir/issue_queue.cc.o -c /mnt/ncsudrive/a/asarath/721/Value-Prediction/721sim/uarchsim/issue_queue.cc
 
@@ -468,7 +491,7 @@ uarchsim/CMakeFiles/721sim.dir/issue_queue.cc.o.provides.build: uarchsim/CMakeFi
 
 uarchsim/CMakeFiles/721sim.dir/schedule.cc.o: uarchsim/CMakeFiles/721sim.dir/flags.make
 uarchsim/CMakeFiles/721sim.dir/schedule.cc.o: /mnt/ncsudrive/a/asarath/721/Value-Prediction/721sim/uarchsim/schedule.cc
-	$(CMAKE_COMMAND) -E cmake_progress_report /mnt/ncsudrive/a/asarath/721/Value-Prediction/build/CMakeFiles $(CMAKE_PROGRESS_19)
+	$(CMAKE_COMMAND) -E cmake_progress_report /mnt/ncsudrive/a/asarath/721/Value-Prediction/build/CMakeFiles $(CMAKE_PROGRESS_20)
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building CXX object uarchsim/CMakeFiles/721sim.dir/schedule.cc.o"
 	cd /mnt/ncsudrive/a/asarath/721/Value-Prediction/build/uarchsim && /usr/bin/c++   $(CXX_DEFINES) $(CXX_FLAGS) -o CMakeFiles/721sim.dir/schedule.cc.o -c /mnt/ncsudrive/a/asarath/721/Value-Prediction/721sim/uarchsim/schedule.cc
 
@@ -491,7 +514,7 @@ uarchsim/CMakeFiles/721sim.dir/schedule.cc.o.provides.build: uarchsim/CMakeFiles
 
 uarchsim/CMakeFiles/721sim.dir/checker.cc.o: uarchsim/CMakeFiles/721sim.dir/flags.make
 uarchsim/CMakeFiles/721sim.dir/checker.cc.o: /mnt/ncsudrive/a/asarath/721/Value-Prediction/721sim/uarchsim/checker.cc
-	$(CMAKE_COMMAND) -E cmake_progress_report /mnt/ncsudrive/a/asarath/721/Value-Prediction/build/CMakeFiles $(CMAKE_PROGRESS_20)
+	$(CMAKE_COMMAND) -E cmake_progress_report /mnt/ncsudrive/a/asarath/721/Value-Prediction/build/CMakeFiles $(CMAKE_PROGRESS_21)
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building CXX object uarchsim/CMakeFiles/721sim.dir/checker.cc.o"
 	cd /mnt/ncsudrive/a/asarath/721/Value-Prediction/build/uarchsim && /usr/bin/c++   $(CXX_DEFINES) $(CXX_FLAGS) -o CMakeFiles/721sim.dir/checker.cc.o -c /mnt/ncsudrive/a/asarath/721/Value-Prediction/721sim/uarchsim/checker.cc
 
@@ -514,7 +537,7 @@ uarchsim/CMakeFiles/721sim.dir/checker.cc.o.provides.build: uarchsim/CMakeFiles/
 
 uarchsim/CMakeFiles/721sim.dir/decode.cc.o: uarchsim/CMakeFiles/721sim.dir/flags.make
 uarchsim/CMakeFiles/721sim.dir/decode.cc.o: /mnt/ncsudrive/a/asarath/721/Value-Prediction/721sim/uarchsim/decode.cc
-	$(CMAKE_COMMAND) -E cmake_progress_report /mnt/ncsudrive/a/asarath/721/Value-Prediction/build/CMakeFiles $(CMAKE_PROGRESS_21)
+	$(CMAKE_COMMAND) -E cmake_progress_report /mnt/ncsudrive/a/asarath/721/Value-Prediction/build/CMakeFiles $(CMAKE_PROGRESS_22)
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building CXX object uarchsim/CMakeFiles/721sim.dir/decode.cc.o"
 	cd /mnt/ncsudrive/a/asarath/721/Value-Prediction/build/uarchsim && /usr/bin/c++   $(CXX_DEFINES) $(CXX_FLAGS) -o CMakeFiles/721sim.dir/decode.cc.o -c /mnt/ncsudrive/a/asarath/721/Value-Prediction/721sim/uarchsim/decode.cc
 
@@ -537,7 +560,7 @@ uarchsim/CMakeFiles/721sim.dir/decode.cc.o.provides.build: uarchsim/CMakeFiles/7
 
 uarchsim/CMakeFiles/721sim.dir/checkpoint.cc.o: uarchsim/CMakeFiles/721sim.dir/flags.make
 uarchsim/CMakeFiles/721sim.dir/checkpoint.cc.o: /mnt/ncsudrive/a/asarath/721/Value-Prediction/721sim/uarchsim/checkpoint.cc
-	$(CMAKE_COMMAND) -E cmake_progress_report /mnt/ncsudrive/a/asarath/721/Value-Prediction/build/CMakeFiles $(CMAKE_PROGRESS_22)
+	$(CMAKE_COMMAND) -E cmake_progress_report /mnt/ncsudrive/a/asarath/721/Value-Prediction/build/CMakeFiles $(CMAKE_PROGRESS_23)
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building CXX object uarchsim/CMakeFiles/721sim.dir/checkpoint.cc.o"
 	cd /mnt/ncsudrive/a/asarath/721/Value-Prediction/build/uarchsim && /usr/bin/c++   $(CXX_DEFINES) $(CXX_FLAGS) -o CMakeFiles/721sim.dir/checkpoint.cc.o -c /mnt/ncsudrive/a/asarath/721/Value-Prediction/721sim/uarchsim/checkpoint.cc
 
@@ -560,7 +583,7 @@ uarchsim/CMakeFiles/721sim.dir/checkpoint.cc.o.provides.build: uarchsim/CMakeFil
 
 uarchsim/CMakeFiles/721sim.dir/alu.cc.o: uarchsim/CMakeFiles/721sim.dir/flags.make
 uarchsim/CMakeFiles/721sim.dir/alu.cc.o: /mnt/ncsudrive/a/asarath/721/Value-Prediction/721sim/uarchsim/alu.cc
-	$(CMAKE_COMMAND) -E cmake_progress_report /mnt/ncsudrive/a/asarath/721/Value-Prediction/build/CMakeFiles $(CMAKE_PROGRESS_23)
+	$(CMAKE_COMMAND) -E cmake_progress_report /mnt/ncsudrive/a/asarath/721/Value-Prediction/build/CMakeFiles $(CMAKE_PROGRESS_24)
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building CXX object uarchsim/CMakeFiles/721sim.dir/alu.cc.o"
 	cd /mnt/ncsudrive/a/asarath/721/Value-Prediction/build/uarchsim && /usr/bin/c++   $(CXX_DEFINES) $(CXX_FLAGS) -o CMakeFiles/721sim.dir/alu.cc.o -c /mnt/ncsudrive/a/asarath/721/Value-Prediction/721sim/uarchsim/alu.cc
 
@@ -583,7 +606,7 @@ uarchsim/CMakeFiles/721sim.dir/alu.cc.o.provides.build: uarchsim/CMakeFiles/721s
 
 uarchsim/CMakeFiles/721sim.dir/bq.cc.o: uarchsim/CMakeFiles/721sim.dir/flags.make
 uarchsim/CMakeFiles/721sim.dir/bq.cc.o: /mnt/ncsudrive/a/asarath/721/Value-Prediction/721sim/uarchsim/bq.cc
-	$(CMAKE_COMMAND) -E cmake_progress_report /mnt/ncsudrive/a/asarath/721/Value-Prediction/build/CMakeFiles $(CMAKE_PROGRESS_24)
+	$(CMAKE_COMMAND) -E cmake_progress_report /mnt/ncsudrive/a/asarath/721/Value-Prediction/build/CMakeFiles $(CMAKE_PROGRESS_25)
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building CXX object uarchsim/CMakeFiles/721sim.dir/bq.cc.o"
 	cd /mnt/ncsudrive/a/asarath/721/Value-Prediction/build/uarchsim && /usr/bin/c++   $(CXX_DEFINES) $(CXX_FLAGS) -o CMakeFiles/721sim.dir/bq.cc.o -c /mnt/ncsudrive/a/asarath/721/Value-Prediction/721sim/uarchsim/bq.cc
 
@@ -606,7 +629,7 @@ uarchsim/CMakeFiles/721sim.dir/bq.cc.o.provides.build: uarchsim/CMakeFiles/721si
 
 uarchsim/CMakeFiles/721sim.dir/tage-sc-l.cc.o: uarchsim/CMakeFiles/721sim.dir/flags.make
 uarchsim/CMakeFiles/721sim.dir/tage-sc-l.cc.o: /mnt/ncsudrive/a/asarath/721/Value-Prediction/721sim/uarchsim/tage-sc-l.cc
-	$(CMAKE_COMMAND) -E cmake_progress_report /mnt/ncsudrive/a/asarath/721/Value-Prediction/build/CMakeFiles $(CMAKE_PROGRESS_25)
+	$(CMAKE_COMMAND) -E cmake_progress_report /mnt/ncsudrive/a/asarath/721/Value-Prediction/build/CMakeFiles $(CMAKE_PROGRESS_26)
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building CXX object uarchsim/CMakeFiles/721sim.dir/tage-sc-l.cc.o"
 	cd /mnt/ncsudrive/a/asarath/721/Value-Prediction/build/uarchsim && /usr/bin/c++   $(CXX_DEFINES) $(CXX_FLAGS) -o CMakeFiles/721sim.dir/tage-sc-l.cc.o -c /mnt/ncsudrive/a/asarath/721/Value-Prediction/721sim/uarchsim/tage-sc-l.cc
 
@@ -629,7 +652,7 @@ uarchsim/CMakeFiles/721sim.dir/tage-sc-l.cc.o.provides.build: uarchsim/CMakeFile
 
 uarchsim/CMakeFiles/721sim.dir/CacheClass.cc.o: uarchsim/CMakeFiles/721sim.dir/flags.make
 uarchsim/CMakeFiles/721sim.dir/CacheClass.cc.o: /mnt/ncsudrive/a/asarath/721/Value-Prediction/721sim/uarchsim/CacheClass.cc
-	$(CMAKE_COMMAND) -E cmake_progress_report /mnt/ncsudrive/a/asarath/721/Value-Prediction/build/CMakeFiles $(CMAKE_PROGRESS_26)
+	$(CMAKE_COMMAND) -E cmake_progress_report /mnt/ncsudrive/a/asarath/721/Value-Prediction/build/CMakeFiles $(CMAKE_PROGRESS_27)
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building CXX object uarchsim/CMakeFiles/721sim.dir/CacheClass.cc.o"
 	cd /mnt/ncsudrive/a/asarath/721/Value-Prediction/build/uarchsim && /usr/bin/c++   $(CXX_DEFINES) $(CXX_FLAGS) -o CMakeFiles/721sim.dir/CacheClass.cc.o -c /mnt/ncsudrive/a/asarath/721/Value-Prediction/721sim/uarchsim/CacheClass.cc
 
@@ -652,7 +675,7 @@ uarchsim/CMakeFiles/721sim.dir/CacheClass.cc.o.provides.build: uarchsim/CMakeFil
 
 uarchsim/CMakeFiles/721sim.dir/pipeline_register.cc.o: uarchsim/CMakeFiles/721sim.dir/flags.make
 uarchsim/CMakeFiles/721sim.dir/pipeline_register.cc.o: /mnt/ncsudrive/a/asarath/721/Value-Prediction/721sim/uarchsim/pipeline_register.cc
-	$(CMAKE_COMMAND) -E cmake_progress_report /mnt/ncsudrive/a/asarath/721/Value-Prediction/build/CMakeFiles $(CMAKE_PROGRESS_27)
+	$(CMAKE_COMMAND) -E cmake_progress_report /mnt/ncsudrive/a/asarath/721/Value-Prediction/build/CMakeFiles $(CMAKE_PROGRESS_28)
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building CXX object uarchsim/CMakeFiles/721sim.dir/pipeline_register.cc.o"
 	cd /mnt/ncsudrive/a/asarath/721/Value-Prediction/build/uarchsim && /usr/bin/c++   $(CXX_DEFINES) $(CXX_FLAGS) -o CMakeFiles/721sim.dir/pipeline_register.cc.o -c /mnt/ncsudrive/a/asarath/721/Value-Prediction/721sim/uarchsim/pipeline_register.cc
 
@@ -675,7 +698,7 @@ uarchsim/CMakeFiles/721sim.dir/pipeline_register.cc.o.provides.build: uarchsim/C
 
 uarchsim/CMakeFiles/721sim.dir/lsu.cc.o: uarchsim/CMakeFiles/721sim.dir/flags.make
 uarchsim/CMakeFiles/721sim.dir/lsu.cc.o: /mnt/ncsudrive/a/asarath/721/Value-Prediction/721sim/uarchsim/lsu.cc
-	$(CMAKE_COMMAND) -E cmake_progress_report /mnt/ncsudrive/a/asarath/721/Value-Prediction/build/CMakeFiles $(CMAKE_PROGRESS_28)
+	$(CMAKE_COMMAND) -E cmake_progress_report /mnt/ncsudrive/a/asarath/721/Value-Prediction/build/CMakeFiles $(CMAKE_PROGRESS_29)
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building CXX object uarchsim/CMakeFiles/721sim.dir/lsu.cc.o"
 	cd /mnt/ncsudrive/a/asarath/721/Value-Prediction/build/uarchsim && /usr/bin/c++   $(CXX_DEFINES) $(CXX_FLAGS) -o CMakeFiles/721sim.dir/lsu.cc.o -c /mnt/ncsudrive/a/asarath/721/Value-Prediction/721sim/uarchsim/lsu.cc
 
@@ -698,7 +721,7 @@ uarchsim/CMakeFiles/721sim.dir/lsu.cc.o.provides.build: uarchsim/CMakeFiles/721s
 
 uarchsim/CMakeFiles/721sim.dir/sim.cc.o: uarchsim/CMakeFiles/721sim.dir/flags.make
 uarchsim/CMakeFiles/721sim.dir/sim.cc.o: /mnt/ncsudrive/a/asarath/721/Value-Prediction/721sim/uarchsim/sim.cc
-	$(CMAKE_COMMAND) -E cmake_progress_report /mnt/ncsudrive/a/asarath/721/Value-Prediction/build/CMakeFiles $(CMAKE_PROGRESS_29)
+	$(CMAKE_COMMAND) -E cmake_progress_report /mnt/ncsudrive/a/asarath/721/Value-Prediction/build/CMakeFiles $(CMAKE_PROGRESS_30)
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building CXX object uarchsim/CMakeFiles/721sim.dir/sim.cc.o"
 	cd /mnt/ncsudrive/a/asarath/721/Value-Prediction/build/uarchsim && /usr/bin/c++   $(CXX_DEFINES) $(CXX_FLAGS) -o CMakeFiles/721sim.dir/sim.cc.o -c /mnt/ncsudrive/a/asarath/721/Value-Prediction/721sim/uarchsim/sim.cc
 
@@ -721,7 +744,7 @@ uarchsim/CMakeFiles/721sim.dir/sim.cc.o.provides.build: uarchsim/CMakeFiles/721s
 
 uarchsim/CMakeFiles/721sim.dir/ic.cc.o: uarchsim/CMakeFiles/721sim.dir/flags.make
 uarchsim/CMakeFiles/721sim.dir/ic.cc.o: /mnt/ncsudrive/a/asarath/721/Value-Prediction/721sim/uarchsim/ic.cc
-	$(CMAKE_COMMAND) -E cmake_progress_report /mnt/ncsudrive/a/asarath/721/Value-Prediction/build/CMakeFiles $(CMAKE_PROGRESS_30)
+	$(CMAKE_COMMAND) -E cmake_progress_report /mnt/ncsudrive/a/asarath/721/Value-Prediction/build/CMakeFiles $(CMAKE_PROGRESS_31)
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building CXX object uarchsim/CMakeFiles/721sim.dir/ic.cc.o"
 	cd /mnt/ncsudrive/a/asarath/721/Value-Prediction/build/uarchsim && /usr/bin/c++   $(CXX_DEFINES) $(CXX_FLAGS) -o CMakeFiles/721sim.dir/ic.cc.o -c /mnt/ncsudrive/a/asarath/721/Value-Prediction/721sim/uarchsim/ic.cc
 
@@ -744,7 +767,7 @@ uarchsim/CMakeFiles/721sim.dir/ic.cc.o.provides.build: uarchsim/CMakeFiles/721si
 
 uarchsim/CMakeFiles/721sim.dir/ras.cc.o: uarchsim/CMakeFiles/721sim.dir/flags.make
 uarchsim/CMakeFiles/721sim.dir/ras.cc.o: /mnt/ncsudrive/a/asarath/721/Value-Prediction/721sim/uarchsim/ras.cc
-	$(CMAKE_COMMAND) -E cmake_progress_report /mnt/ncsudrive/a/asarath/721/Value-Prediction/build/CMakeFiles $(CMAKE_PROGRESS_31)
+	$(CMAKE_COMMAND) -E cmake_progress_report /mnt/ncsudrive/a/asarath/721/Value-Prediction/build/CMakeFiles $(CMAKE_PROGRESS_32)
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building CXX object uarchsim/CMakeFiles/721sim.dir/ras.cc.o"
 	cd /mnt/ncsudrive/a/asarath/721/Value-Prediction/build/uarchsim && /usr/bin/c++   $(CXX_DEFINES) $(CXX_FLAGS) -o CMakeFiles/721sim.dir/ras.cc.o -c /mnt/ncsudrive/a/asarath/721/Value-Prediction/721sim/uarchsim/ras.cc
 
@@ -767,7 +790,7 @@ uarchsim/CMakeFiles/721sim.dir/ras.cc.o.provides.build: uarchsim/CMakeFiles/721s
 
 uarchsim/CMakeFiles/721sim.dir/fetchunit.cc.o: uarchsim/CMakeFiles/721sim.dir/flags.make
 uarchsim/CMakeFiles/721sim.dir/fetchunit.cc.o: /mnt/ncsudrive/a/asarath/721/Value-Prediction/721sim/uarchsim/fetchunit.cc
-	$(CMAKE_COMMAND) -E cmake_progress_report /mnt/ncsudrive/a/asarath/721/Value-Prediction/build/CMakeFiles $(CMAKE_PROGRESS_32)
+	$(CMAKE_COMMAND) -E cmake_progress_report /mnt/ncsudrive/a/asarath/721/Value-Prediction/build/CMakeFiles $(CMAKE_PROGRESS_33)
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building CXX object uarchsim/CMakeFiles/721sim.dir/fetchunit.cc.o"
 	cd /mnt/ncsudrive/a/asarath/721/Value-Prediction/build/uarchsim && /usr/bin/c++   $(CXX_DEFINES) $(CXX_FLAGS) -o CMakeFiles/721sim.dir/fetchunit.cc.o -c /mnt/ncsudrive/a/asarath/721/Value-Prediction/721sim/uarchsim/fetchunit.cc
 
@@ -790,7 +813,7 @@ uarchsim/CMakeFiles/721sim.dir/fetchunit.cc.o.provides.build: uarchsim/CMakeFile
 
 uarchsim/CMakeFiles/721sim.dir/debug.cc.o: uarchsim/CMakeFiles/721sim.dir/flags.make
 uarchsim/CMakeFiles/721sim.dir/debug.cc.o: /mnt/ncsudrive/a/asarath/721/Value-Prediction/721sim/uarchsim/debug.cc
-	$(CMAKE_COMMAND) -E cmake_progress_report /mnt/ncsudrive/a/asarath/721/Value-Prediction/build/CMakeFiles $(CMAKE_PROGRESS_33)
+	$(CMAKE_COMMAND) -E cmake_progress_report /mnt/ncsudrive/a/asarath/721/Value-Prediction/build/CMakeFiles $(CMAKE_PROGRESS_34)
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building CXX object uarchsim/CMakeFiles/721sim.dir/debug.cc.o"
 	cd /mnt/ncsudrive/a/asarath/721/Value-Prediction/build/uarchsim && /usr/bin/c++   $(CXX_DEFINES) $(CXX_FLAGS) -o CMakeFiles/721sim.dir/debug.cc.o -c /mnt/ncsudrive/a/asarath/721/Value-Prediction/721sim/uarchsim/debug.cc
 
@@ -813,7 +836,7 @@ uarchsim/CMakeFiles/721sim.dir/debug.cc.o.provides.build: uarchsim/CMakeFiles/72
 
 uarchsim/CMakeFiles/721sim.dir/fetch.cc.o: uarchsim/CMakeFiles/721sim.dir/flags.make
 uarchsim/CMakeFiles/721sim.dir/fetch.cc.o: /mnt/ncsudrive/a/asarath/721/Value-Prediction/721sim/uarchsim/fetch.cc
-	$(CMAKE_COMMAND) -E cmake_progress_report /mnt/ncsudrive/a/asarath/721/Value-Prediction/build/CMakeFiles $(CMAKE_PROGRESS_34)
+	$(CMAKE_COMMAND) -E cmake_progress_report /mnt/ncsudrive/a/asarath/721/Value-Prediction/build/CMakeFiles $(CMAKE_PROGRESS_35)
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building CXX object uarchsim/CMakeFiles/721sim.dir/fetch.cc.o"
 	cd /mnt/ncsudrive/a/asarath/721/Value-Prediction/build/uarchsim && /usr/bin/c++   $(CXX_DEFINES) $(CXX_FLAGS) -o CMakeFiles/721sim.dir/fetch.cc.o -c /mnt/ncsudrive/a/asarath/721/Value-Prediction/721sim/uarchsim/fetch.cc
 
@@ -836,7 +859,7 @@ uarchsim/CMakeFiles/721sim.dir/fetch.cc.o.provides.build: uarchsim/CMakeFiles/72
 
 uarchsim/CMakeFiles/721sim.dir/fetch_queue.cc.o: uarchsim/CMakeFiles/721sim.dir/flags.make
 uarchsim/CMakeFiles/721sim.dir/fetch_queue.cc.o: /mnt/ncsudrive/a/asarath/721/Value-Prediction/721sim/uarchsim/fetch_queue.cc
-	$(CMAKE_COMMAND) -E cmake_progress_report /mnt/ncsudrive/a/asarath/721/Value-Prediction/build/CMakeFiles $(CMAKE_PROGRESS_35)
+	$(CMAKE_COMMAND) -E cmake_progress_report /mnt/ncsudrive/a/asarath/721/Value-Prediction/build/CMakeFiles $(CMAKE_PROGRESS_36)
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building CXX object uarchsim/CMakeFiles/721sim.dir/fetch_queue.cc.o"
 	cd /mnt/ncsudrive/a/asarath/721/Value-Prediction/build/uarchsim && /usr/bin/c++   $(CXX_DEFINES) $(CXX_FLAGS) -o CMakeFiles/721sim.dir/fetch_queue.cc.o -c /mnt/ncsudrive/a/asarath/721/Value-Prediction/721sim/uarchsim/fetch_queue.cc
 
@@ -859,7 +882,7 @@ uarchsim/CMakeFiles/721sim.dir/fetch_queue.cc.o.provides.build: uarchsim/CMakeFi
 
 uarchsim/CMakeFiles/721sim.dir/squash.cc.o: uarchsim/CMakeFiles/721sim.dir/flags.make
 uarchsim/CMakeFiles/721sim.dir/squash.cc.o: /mnt/ncsudrive/a/asarath/721/Value-Prediction/721sim/uarchsim/squash.cc
-	$(CMAKE_COMMAND) -E cmake_progress_report /mnt/ncsudrive/a/asarath/721/Value-Prediction/build/CMakeFiles $(CMAKE_PROGRESS_36)
+	$(CMAKE_COMMAND) -E cmake_progress_report /mnt/ncsudrive/a/asarath/721/Value-Prediction/build/CMakeFiles $(CMAKE_PROGRESS_37)
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building CXX object uarchsim/CMakeFiles/721sim.dir/squash.cc.o"
 	cd /mnt/ncsudrive/a/asarath/721/Value-Prediction/build/uarchsim && /usr/bin/c++   $(CXX_DEFINES) $(CXX_FLAGS) -o CMakeFiles/721sim.dir/squash.cc.o -c /mnt/ncsudrive/a/asarath/721/Value-Prediction/721sim/uarchsim/squash.cc
 
@@ -882,7 +905,7 @@ uarchsim/CMakeFiles/721sim.dir/squash.cc.o.provides.build: uarchsim/CMakeFiles/7
 
 uarchsim/CMakeFiles/721sim.dir/writeback.cc.o: uarchsim/CMakeFiles/721sim.dir/flags.make
 uarchsim/CMakeFiles/721sim.dir/writeback.cc.o: /mnt/ncsudrive/a/asarath/721/Value-Prediction/721sim/uarchsim/writeback.cc
-	$(CMAKE_COMMAND) -E cmake_progress_report /mnt/ncsudrive/a/asarath/721/Value-Prediction/build/CMakeFiles $(CMAKE_PROGRESS_37)
+	$(CMAKE_COMMAND) -E cmake_progress_report /mnt/ncsudrive/a/asarath/721/Value-Prediction/build/CMakeFiles $(CMAKE_PROGRESS_38)
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Building CXX object uarchsim/CMakeFiles/721sim.dir/writeback.cc.o"
 	cd /mnt/ncsudrive/a/asarath/721/Value-Prediction/build/uarchsim && /usr/bin/c++   $(CXX_DEFINES) $(CXX_FLAGS) -o CMakeFiles/721sim.dir/writeback.cc.o -c /mnt/ncsudrive/a/asarath/721/Value-Prediction/721sim/uarchsim/writeback.cc
 
@@ -921,6 +944,7 @@ uarchsim/CMakeFiles/721sim.dir/writeback.cc.o.provides.build: uarchsim/CMakeFile
 "CMakeFiles/721sim.dir/histogram.cc.o" \
 "CMakeFiles/721sim.dir/pipeline.cc.o" \
 "CMakeFiles/721sim.dir/btb.cc.o" \
+"CMakeFiles/721sim.dir/value_predictor.cc.o" \
 "CMakeFiles/721sim.dir/stats.cc.o" \
 "CMakeFiles/721sim.dir/issue_queue.cc.o" \
 "CMakeFiles/721sim.dir/schedule.cc.o" \
@@ -962,6 +986,7 @@ uarchsim/721sim: uarchsim/CMakeFiles/721sim.dir/tc.cc.o
 uarchsim/721sim: uarchsim/CMakeFiles/721sim.dir/histogram.cc.o
 uarchsim/721sim: uarchsim/CMakeFiles/721sim.dir/pipeline.cc.o
 uarchsim/721sim: uarchsim/CMakeFiles/721sim.dir/btb.cc.o
+uarchsim/721sim: uarchsim/CMakeFiles/721sim.dir/value_predictor.cc.o
 uarchsim/721sim: uarchsim/CMakeFiles/721sim.dir/stats.cc.o
 uarchsim/721sim: uarchsim/CMakeFiles/721sim.dir/issue_queue.cc.o
 uarchsim/721sim: uarchsim/CMakeFiles/721sim.dir/schedule.cc.o
@@ -1014,6 +1039,7 @@ uarchsim/CMakeFiles/721sim.dir/requires: uarchsim/CMakeFiles/721sim.dir/tc.cc.o.
 uarchsim/CMakeFiles/721sim.dir/requires: uarchsim/CMakeFiles/721sim.dir/histogram.cc.o.requires
 uarchsim/CMakeFiles/721sim.dir/requires: uarchsim/CMakeFiles/721sim.dir/pipeline.cc.o.requires
 uarchsim/CMakeFiles/721sim.dir/requires: uarchsim/CMakeFiles/721sim.dir/btb.cc.o.requires
+uarchsim/CMakeFiles/721sim.dir/requires: uarchsim/CMakeFiles/721sim.dir/value_predictor.cc.o.requires
 uarchsim/CMakeFiles/721sim.dir/requires: uarchsim/CMakeFiles/721sim.dir/stats.cc.o.requires
 uarchsim/CMakeFiles/721sim.dir/requires: uarchsim/CMakeFiles/721sim.dir/issue_queue.cc.o.requires
 uarchsim/CMakeFiles/721sim.dir/requires: uarchsim/CMakeFiles/721sim.dir/schedule.cc.o.requires

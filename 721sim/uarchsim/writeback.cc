@@ -174,6 +174,23 @@ void pipeline_t::writeback(unsigned int lane_number) {
       }
 
       //////////////////////////////////////////////////////////////////////////////////////////////////////////
+      // Compare predicted value from the SVP to the computed value in case a prediction has been made
+      // 1. In case of perfect prediction or oracle prediction, it is impossible for the prediction to be 
+      //    wrong so this comparison can be asserted to be correct.
+      // 2. In case of real prediction, the comparison has to be done and if:
+      //    a. Values match - Do nothing
+      //    b. Values do not match - Post value misprediction in AL entry
+      //    c. Optionally can also initiate immediate recovery in case we are implementing VR-3, VR-4 or VR-5
+      //////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+      if (PAY.buf[index].predict_flag) {
+         assert(PAY.buf[index].vp_eligible && PAY.buf[index].vpq_flag);
+         if (PAY.buf[index].C_value.dw != PAY.buf[index].predicted_value) {
+            REN->set_value_misprediction(PAY.buf[index].AL_index);
+         }
+      }
+
+      //////////////////////////////////////////////////////////////////////////////////////////////////////////
       // FIX_ME #16
       // Set completed bit in Active List.
       //

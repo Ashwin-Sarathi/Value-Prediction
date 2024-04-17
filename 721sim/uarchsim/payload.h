@@ -140,6 +140,8 @@ typedef struct {
    //ADD predicted value to the destination register
    //************************************************ 
 
+   bool vp_eligible;             // Indicates if the instruction is eligible for value prediction
+
    bool vpq_flag;                // Indicates if the instruction is present in the VPQ
 
    bool predict_flag;            // Indicates if the value is being predicted by VP unit

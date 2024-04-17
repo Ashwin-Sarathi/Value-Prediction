@@ -494,9 +494,9 @@ int main(int argc, char** argv)
   /* opening banner */
 //   Testing command line arguments:   
 //   printf("VALUE PREDICTION ENABLED = %lu\n", VALUE_PREDICTION_ENABLED);
-     printf("vpq size = %d\n", vpq_size);
-     printf("svp_index_bits = %d\n", svp_index_bits);
-     printf("svp_predict_load = %d\n", svp_predict_load);
+   //   printf("vpq size = %d\n", vpq_size);
+   //   printf("svp_index_bits = %d\n", svp_index_bits);
+   //   printf("svp_predict_load = %d\n", svp_predict_load);
 
   /* 2/14/18 ER: Add banner for 721 simulator. */
   fprintf(stderr,
