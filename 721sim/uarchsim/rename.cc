@@ -52,6 +52,7 @@ void pipeline_t::rename2() {
    unsigned int i;
    unsigned int index;
    unsigned int bundle_dst, bundle_branch, bundle_VPQ;
+   bool not_enough_vpq;
 
    // Stall the rename2 sub-stage if either:
    // (1) There isn't a current rename bundle.
@@ -133,6 +134,11 @@ void pipeline_t::rename2() {
          return;
    }
 
+   not_enough_vpq = VPU.stallVPQ(bundle_VPQ);
+   if(not_enough_vpq && !vpq_full_policy) {
+      return;
+   }
+
    //********************************************
    // FIX_ME #2 END
    //********************************************
@@ -177,11 +183,55 @@ void pipeline_t::rename2() {
         PAY.buf[index].D_phys_reg = REN->rename_rsrc(PAY.buf[index].D_log_reg);
       }
 
+      //********************************************
+      // Predicting values of destination registers 
+      //********************************************
 
       //The destination register is C
       //If valid, call rename_rdst function. Input: log_reg, the logical register to rename
-      if (PAY.buf[index].C_valid){
-        PAY.buf[index].C_phys_reg = REN->rename_rdst(PAY.buf[index].C_log_reg);
+
+      if (PAY.buf[index].C_valid) {
+
+         uint64_t predicted_value;
+         bool branch_flag = IS_BRANCH(PAY.buf[index].flags);
+         db_t* actual_value;
+         
+         //Only allocate if VPU is not full
+         //if vpq_full_policy is 1 and VPU is full, don't allocate
+         if(!VPU.isVPQFull()){
+            VPU.enqueue(PAY.buf[index].pc);
+            PAY.buf[index].vpq_flag = true;
+         } 
+         
+         //oracle confidence 
+         if(oracle_confidence){
+            if (PAY.buf[index].good_instruction && !branch_flag) {
+
+               actual_value = get_pipe()->peek(PAY.buf[index].db_index);
+               if(VPU.getOracleConfidentPrediction(PAY.buf[index].pc, predicted_value, actual_value->a_rdst[0].value)){
+                  PAY.buf[index].C_phys_reg = REN->rename_rdst(PAY.buf[index].C_log_reg);
+                  PAY.buf[index].predicted_value = predicted_value;
+                  PAY.buf[index].predict_flag = true; 
+               }
+               else{
+                  PAY.buf[index].C_phys_reg = REN->rename_rdst(PAY.buf[index].C_log_reg);
+               }
+            }
+         }
+
+         //Real confidence: check for a confident prediction for the logical destination register & 
+         if ((VPU.getConfidentPrediction(PAY.buf[index].pc, predicted_value)) && !oracle_confidence) {
+            // A confident prediction is available
+            //Instance is incremented within get_confident_prediction
+            PAY.buf[index].C_phys_reg = REN->rename_rdst(PAY.buf[index].C_log_reg);
+            PAY.buf[index].predicted_value = predicted_value; // Update the predicted value in the payload
+            PAY.buf[index].predict_flag = true;
+         } 
+         
+         else {
+            // No confident prediction available
+            PAY.buf[index].C_phys_reg = REN->rename_rdst(PAY.buf[index].C_log_reg);
+         }
       }
 
       //********************************************
