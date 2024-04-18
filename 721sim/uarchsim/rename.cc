@@ -210,6 +210,7 @@ void pipeline_t::rename2() {
 
             uint64_t predicted_value;
             db_t* actual_value;
+
             
             //Only allocate if VPU is not full
             //if vpq_full_policy is 1 and VPU is full, don't allocate
@@ -220,19 +221,19 @@ void pipeline_t::rename2() {
             }
             else {
                PAY.buf[index].vpq_flag = false; 
-            } 
-            
+            }
+
+            PAY.buf[index].C_phys_reg = REN->rename_rdst(PAY.buf[index].C_log_reg);
+ 
             //oracle confidence 
             if(oracle_confidence && PAY.buf[index].good_instruction && !PAY.buf[index].checkpoint && PAY.buf[index].vp_eligible && PAY.buf[index].vpq_flag){
                   assert(PAY.buf[index].vp_eligible && PAY.buf[index].vpq_flag);
                   actual_value = get_pipe()->peek(PAY.buf[index].db_index);
                   if(VPU.getOracleConfidentPrediction(PAY.buf[index].pc, predicted_value, actual_value->a_rdst[0].value)){
-                     PAY.buf[index].C_phys_reg = REN->rename_rdst(PAY.buf[index].C_log_reg);
                      PAY.buf[index].predicted_value = predicted_value;
                      PAY.buf[index].predict_flag = true; 
                   }
                   else{
-                     PAY.buf[index].C_phys_reg = REN->rename_rdst(PAY.buf[index].C_log_reg);
                      PAY.buf[index].predict_flag = false; 
                   }
             }
@@ -242,13 +243,11 @@ void pipeline_t::rename2() {
                // A confident prediction is available
                //Instance is incremented within get_confident_prediction
                assert(PAY.buf[index].vp_eligible && PAY.buf[index].vpq_flag);
-               PAY.buf[index].C_phys_reg = REN->rename_rdst(PAY.buf[index].C_log_reg);
                PAY.buf[index].predicted_value = predicted_value; // Update the predicted value in the payload
                PAY.buf[index].predict_flag = true;
             } 
             else {
                // No confident prediction available
-               PAY.buf[index].C_phys_reg = REN->rename_rdst(PAY.buf[index].C_log_reg);
                PAY.buf[index].predict_flag = false;
             }
       }
