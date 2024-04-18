@@ -60,7 +60,7 @@ void svp_vpq::trainOrReplace(uint64_t pc, uint64_t value) {
             svp_table[index].stride = value;
             svp_table[index].last_value = value;
             svp_table[index].confidence = 0; 
-            svp_table[index].instance = countVPQInstances(pc);
+            svp_table[index].instance = countVPQInstances(pc) - 1;
         }
     }
 
@@ -143,12 +143,13 @@ uint64_t svp_vpq::generateVPQEntryPC(uint64_t pc) {
     return pc;
 }
 
-bool svp_vpq::enqueue(uint64_t pc) {
+int svp_vpq::enqueue(uint64_t pc) {
     // if (isVPQFull()) {
     //     std::cerr << "ERROR: Attempted to enqueue to a full Value Prediction Queue.\n";
     //     return false;
     // }
     assert(!isVPQFull());
+    unsigned int old_tail = vpq_tail;
 
     uint64_t vpq_pc = generateVPQEntryPC(pc);
     vpq_queue[vpq_tail].pc = vpq_pc;
@@ -159,7 +160,7 @@ bool svp_vpq::enqueue(uint64_t pc) {
         vpq_tail_phase_bit = !vpq_tail_phase_bit;
         vpq_tail = 0;
     }
-    return true;
+    return old_tail;
 }
 
 bool svp_vpq::dequeue(uint64_t pc) {
@@ -224,28 +225,14 @@ void svp_vpq::getTailForCheckpoint(uint64_t &tail, bool &tail_phase_bit) {
     return;    
 }
 
-void svp_vpq::addComputedValueToVPQ(uint64_t pc, uint64_t computed_value) {
-    uint64_t vpq_pc;
-    vpq_pc = generateVPQEntryPC(pc);
-
-    for(int i = 0; i < vpq_size; ++i){
-        if(vpq_queue[i].pc == vpq_pc){
-            vpq_queue[i].computed_value = computed_value; 
-        }
-    }
+void svp_vpq::addComputedValueToVPQ(unsigned int vpq_index, uint64_t computed_value) {
+    vpq_queue[vpq_index].computed_value = computed_value;
 }
 
-
-uint64_t svp_vpq::retComputedValue(uint64_t pc){
-    uint64_t vpq_pc;
-    vpq_pc = generateVPQEntryPC(pc);
-
-    for(int i = 0; i < vpq_size; ++i){
-        if(vpq_queue[i].pc == vpq_pc){
-            return vpq_queue[vpq_pc].computed_value; 
-        }
-    }
+uint64_t svp_vpq::retComputedValue(uint64_t index){
+    return vpq_queue[index].computed_value; 
 }
+
 //-------------------------------------------------------------------
 // Additional functions to support value prediction in the pipeline
 //-------------------------------------------------------------------
@@ -278,16 +265,6 @@ bool svp_vpq::isEligible(uint64_t pc, bool is_branch, bool destination_register)
     if (!svp_predict_load) {
         return false;
     }
-
-    // if(!oracle_confidence){
-    //     // Search for the entry with the given PC and check for confidence
-    //     for (uint64_t i = 0; i < svp_size; ++i) {
-    //         if (svp_table[i].tag == tag) {
-    //             // Check if the confidence level of the prediction is saturated.
-    //             return svp_table[i].confidence == svp_conf_max;
-    //         }
-    //     }
-    // } // Do we need conf max to check whether this gets added to VPQ
     return true;
 }
 

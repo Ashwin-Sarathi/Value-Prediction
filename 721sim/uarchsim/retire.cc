@@ -98,10 +98,10 @@ void pipeline_t::retire(size_t& instret) {
          //When an instruction that was a allocated a VPQ entry at rename, it calls the train function 
          if(PAY.buf[PAY.head].vpq_flag){
             uint64_t computed_value_vpq; 
-            computed_value_vpq = VPU.retComputedValue(PAY.buf[PAY.head].pc); 
+            computed_value_vpq = VPU.retComputedValue(PAY.buf[PAY.head].vpq_index); 
             VPU.trainOrReplace(PAY.buf[PAY.head].pc, computed_value_vpq); 
          }
-         
+
          REN->commit(); 
          //********************************************
          // FIX_ME #17b END

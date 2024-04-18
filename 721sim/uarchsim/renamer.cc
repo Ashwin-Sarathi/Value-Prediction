@@ -642,3 +642,7 @@ renamer:: renamer(uint64_t n_log_regs, uint64_t n_phys_regs, uint64_t n_branches
         point->head_phase_bit = 0; 
         point->checkpointedGBM = 0; 
     }
+
+
+
+

@@ -494,9 +494,22 @@ int main(int argc, char** argv)
   /* opening banner */
 //   Testing command line arguments:   
 //   printf("VALUE PREDICTION ENABLED = %lu\n", VALUE_PREDICTION_ENABLED);
+
+//*****************************************************************
+//Works
+//*****************************************************************
    //   printf("vpq size = %d\n", vpq_size);
+   //   printf("oracle_confidence = %lu\n", oracle_confidence);
    //   printf("svp_index_bits = %d\n", svp_index_bits);
-   //   printf("svp_predict_load = %d\n", svp_predict_load);
+   //   printf("svp_tag_bits = %d\n", svp_tag_bits);
+   //    printf("svp_conf_inc = %d\n", svp_conf_inc);
+   //   printf("svp_conf_dec = %d\n", svp_conf_dec);
+   //   printf("svp_replace_stride = %d\n", svp_replace_stride);
+   //   printf("svp_replace = %d\n", svp_replace);
+   //    printf("svp_predict_int_alu = %lu\n", svp_predict_int_alu);
+   //    printf("svp_predict_fp_alu = %lu\n", svp_predict_fp_alu);
+   //    printf("svp_predict_load = %lu\n", svp_predict_load);
+   //    printf("vpq_full_policy = %lu\n", vpq_full_policy);
 
   /* 2/14/18 ER: Add banner for 721 simulator. */
   fprintf(stderr,

@@ -146,6 +146,8 @@ typedef struct {
 
    bool predict_flag;            // Indicates if the value is being predicted by VP unit
 
+   unsigned int vpq_index;                // Specifies the instructions index in the VPQ
+
    uint64_t predicted_value;     // If confident, prediction is available
 
    // ** SOURCE ** register D.
