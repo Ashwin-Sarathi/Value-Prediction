@@ -104,7 +104,7 @@ void pipeline_t::rename2() {
       // bool branch_flag = IS_BRANCH(PAY.buf[index].flags);
       bool load_flag = IS_LOAD(PAY.buf[index].flags);
       if (VALUE_PREDICTION_ENABLED) {
-         if(VPU.isEligible(PAY.buf[index].pc, !PAY.buf[index].checkpoint, PAY.buf[index].C_valid, PAY.buf[index].fu, load_flag)){
+         if(VPU.isEligible(PAY.buf[index].pc, PAY.buf[index].checkpoint, PAY.buf[index].C_valid, PAY.buf[index].fu, load_flag)){
             bundle_VPQ++;
             PAY.buf[index].vp_eligible = true;
          }    

@@ -560,4 +560,5 @@ public:
 	// Query the exception bit of the indicated entry in the Active List.
 	/////////////////////////////////////////////////////////////////////
 	bool get_exception(uint64_t AL_index);
+	void printFL(); 
 };
