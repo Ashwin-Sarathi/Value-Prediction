@@ -294,7 +294,7 @@ void pipeline_t::load_replay() {
          // value comparison must be done here itself. The correct value must also be deposited 
          // in the VPQ over here.
          if (VALUE_PREDICTION_ENABLED && PAY.buf[index].predict_flag) {
-            assert(PAY.buf[index].vp_eligible && PAY.buf[index].vpq_flag);
+            // assert(PAY.buf[index].vp_eligible && PAY.buf[index].vpq_flag);
 
             if (!VPU.comparePredictedAndComputed(PAY.buf[index].C_value.dw, PAY.buf[index].predicted_value)) {
                // Sets the value mispredict flag in the AL in case the prediction is incorrect

@@ -1,4 +1,7 @@
 #include "pipeline.h"
+#include <stdio.h>
+
+using namespace std;
 
 //Has been fixed 
 
@@ -141,17 +144,23 @@ void pipeline_t::rename2() {
    //calling the stall branch & stall_reg functions from the renamer class
    //REN ---> register rename module
    if(REN->stall_branch(bundle_branch)) {
-         return;
+      return;
    }
    if(REN->stall_reg(bundle_dst)) {
-         return;
+      return;
    }
 
-   if (VALUE_PREDICTION_ENABLED) {
-      not_enough_vpq = VPU.stallVPQ(bundle_VPQ);
-      if(not_enough_vpq && !vpq_full_policy) {
-         return;
-      }
+   // if (VALUE_PREDICTION_ENABLED) {
+   //    not_enough_vpq = VPU.stallVPQ(bundle_VPQ);
+   //    // if(not_enough_vpq && !vpq_full_policy) {
+   //    if(not_enough_vpq) {
+   //       // test = true;
+   //       return;
+   //    }
+   // }
+
+   if (VALUE_PREDICTION_ENABLED && VPU.stallVPQ(bundle_VPQ)) {
+      return;
    }
 
    //********************************************
@@ -166,6 +175,7 @@ void pipeline_t::rename2() {
          break;			// Not a valid instruction: Reached the end of the rename bundle so exit loop.
 
       index = RENAME2[i].index;
+      assert(!REN->freelist_empty());
 
       // FIX_ME #3
       // Rename source registers (first) and destination register (second).

@@ -164,7 +164,9 @@ void pipeline_t::retire(size_t& instret) {
 
             // The head instruction was already committed above (fix #17b).
 	    // Squash all instructions after it.
-            VPU.fullRollbackVPU();
+            if (VALUE_PREDICTION_ENABLED && !PERFECT_VALUE_PREDICTION) {
+               VPU.fullRollbackVPU();
+            }
             squash_complete(next_inst_pc);
             inc_counter(recovery_count);
 
@@ -190,7 +192,9 @@ void pipeline_t::retire(size_t& instret) {
 	 LSU.train(load);
 
          // Full squash, including the mispredicted load, and restart fetching from the load.
-         VPU.fullRollbackVPU();
+         if (VALUE_PREDICTION_ENABLED && !PERFECT_VALUE_PREDICTION) {
+            VPU.fullRollbackVPU();
+         }
          squash_complete(offending_PC);
          inc_counter(recovery_count);
          inc_counter(ld_vio_count);
@@ -224,7 +228,9 @@ void pipeline_t::retire(size_t& instret) {
          checker();
 
          // Squash the pipeline.
-         VPU.fullRollbackVPU();
+         if (VALUE_PREDICTION_ENABLED && !PERFECT_VALUE_PREDICTION) {
+            VPU.fullRollbackVPU();
+         }
          squash_complete(jump_PC);
          inc_counter(recovery_count);
 

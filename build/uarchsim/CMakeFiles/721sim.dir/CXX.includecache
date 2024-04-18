@@ -96,14 +96,6 @@ common.h
 decode.h
 /mnt/ncsudrive/a/asarath/721/Value-Prediction/721sim/uarchsim/decode.h
 
-/mnt/ncsudrive/a/asarath/721/Value-Prediction/721sim/uarchsim/dispatch.cc
-pipeline.h
-/mnt/ncsudrive/a/asarath/721/Value-Prediction/721sim/uarchsim/pipeline.h
-debug.h
-/mnt/ncsudrive/a/asarath/721/Value-Prediction/721sim/uarchsim/debug.h
-trap.h
-/mnt/ncsudrive/a/asarath/721/Value-Prediction/721sim/uarchsim/trap.h
-
 /mnt/ncsudrive/a/asarath/721/Value-Prediction/721sim/uarchsim/fetch_queue.h
 
 /mnt/ncsudrive/a/asarath/721/Value-Prediction/721sim/uarchsim/fetchunit.h
@@ -219,6 +211,8 @@ value_predictor.h
 /mnt/ncsudrive/a/asarath/721/Value-Prediction/721sim/uarchsim/rename.cc
 pipeline.h
 /mnt/ncsudrive/a/asarath/721/Value-Prediction/721sim/uarchsim/pipeline.h
+stdio.h
+-
 
 /mnt/ncsudrive/a/asarath/721/Value-Prediction/721sim/uarchsim/renamer.h
 inttypes.h
@@ -273,4 +267,6 @@ vector
 -
 parameters.h
 /mnt/ncsudrive/a/asarath/721/Value-Prediction/721sim/uarchsim/parameters.h
+fu.h
+/mnt/ncsudrive/a/asarath/721/Value-Prediction/721sim/uarchsim/fu.h
 

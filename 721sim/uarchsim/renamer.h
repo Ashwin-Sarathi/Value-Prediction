@@ -192,7 +192,7 @@ private:
 	/////////////////////////////////////////////////////////////////////
 
 	void update_rename_map_table(uint64_t logical_register, uint64_t physical_register); //updates the mapping of a logical to a physical register in the rename map table
-	bool freelist_empty(); 
+	// bool freelist_empty(); 
 	bool freelist_full(); 
 	void store_checkpoint(uint64_t branchID, uint64_t vpq_tail, bool vpq_tail_phase_bit); 
 	bool activelist_empty(); 
@@ -202,6 +202,7 @@ private:
 
 
 public:
+	bool freelist_empty();
 	////////////////////////////////////////
 	// Public functions.
 	////////////////////////////////////////
