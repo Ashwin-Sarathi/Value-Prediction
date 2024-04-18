@@ -101,9 +101,9 @@ void pipeline_t::rename2() {
          bundle_branch++; 
       }
 
-      // bool branch_flag = IS_BRANCH(PAY.buf[index].flags);
+      bool load_flag = IS_LOAD(PAY.buf[index].flags);
       if (VALUE_PREDICTION_ENABLED) {
-         if(VPU.isEligible(PAY.buf[index].pc, PAY.buf[index].checkpoint, PAY.buf[index].C_valid)){
+         if(VPU.isEligible(PAY.buf[index].pc, PAY.buf[index].checkpoint, PAY.buf[index].C_valid, PAY.buf[index].fu, load_flag)){
             bundle_VPQ++;
             PAY.buf[index].vp_eligible = true;
          }    
@@ -247,8 +247,7 @@ void pipeline_t::rename2() {
                PAY.buf[index].C_phys_reg = REN->rename_rdst(PAY.buf[index].C_log_reg);
                PAY.buf[index].predicted_value = predicted_value; // Update the predicted value in the payload
                PAY.buf[index].predict_flag = true;
-            } 
-            
+            }             
             else {
                // No confident prediction available
                PAY.buf[index].C_phys_reg = REN->rename_rdst(PAY.buf[index].C_log_reg);

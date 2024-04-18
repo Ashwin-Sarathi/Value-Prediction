@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <cassert>
 #include <iostream>
+#include <cstdio>
 
 using namespace std;
 
@@ -87,7 +88,7 @@ unsigned int svp_vpq::countVPQInstances(uint64_t pc) {
             temp_vpq_head = 0;
         }
     }
-    return count;
+    return (count - 1);
 }
 
 //Extract index from the PC, based on the number of index bits
@@ -130,6 +131,18 @@ bool svp_vpq::getOraclePrediction(uint64_t pc, uint64_t& predicted_value, uint64
 
     //No SVP hit or wrong prediction 
     return false;
+}
+
+void svp_vpq::printSVPStatus() {
+    fprintf(stdout, "SVP Entries:\n");
+    fprintf(stdout, "Index\tTag\tLast Value\tStride\tConfidence\tInstance\n");
+    for (uint64_t i = 0; i < svp_size; ++i) {
+        const auto& entry = svp_table[i];
+        if (entry.tag != 0 || entry.last_value != 0) {  // Print only initialized entries
+            fprintf(stdout, "%lu\t%lu\t%lu\t%ld\t%u\t%u\n",
+                    i, entry.tag, entry.last_value, entry.stride, entry.confidence, entry.instance);
+        }
+    }
 }
 
 //-------------------------------------------------------------------
@@ -229,6 +242,77 @@ void svp_vpq::addComputedValueToVPQ(unsigned int vpq_index, uint64_t computed_va
     vpq_queue[vpq_index].computed_value = computed_value;
 }
 
+uint64_t svp_vpq::retComputedValue(uint64_t index) {
+    return vpq_queue[index].computed_value; 
+}
+
+void svp_vpq::printVPQStatus() {
+
+    fprintf(stdout, "VPQ State:\n");
+    fprintf(stdout, "Head: %u (Phase Bit: %d)\n", vpq_head, vpq_head_phase_bit);
+    fprintf(stdout, "Tail: %u (Phase Bit: %d)\n", vpq_tail, vpq_tail_phase_bit);
+    fprintf(stdout, "\n");
+
+    fprintf(stdout, "VPQ Entries:\n");
+    fprintf(stdout, "Index\tPC\tComputed Value\n");
+
+    unsigned int i = vpq_head;
+    while (true) {
+        const auto& entry = vpq_queue[i];
+        fprintf(stdout, "%u\t%lu\t%lu\n", i, entry.pc, entry.computed_value);
+
+        if (i == vpq_tail) {
+            break; 
+        }
+
+        i = (i + 1) % vpq_size; //wrap around at end of queue 
+
+        if (i == vpq_head) {
+            break; 
+        }
+    }
+}
+
+
+//-----------------------------------
+// Functions to manage VPU rollback
+//-----------------------------------
+void svp_vpq::fullRollbackVPU() {
+    // For a full rollback of VPQ, the VPQ tail is set to the VPQ head
+    vpq_tail = vpq_head;
+    vpq_tail_phase_bit = vpq_head_phase_bit;
+
+    // The SVP is scanned and all instances are set to 0
+    for (uint64_t i = 0; i < svp_size; ++i) {
+        svp_table[i].instance = 0;
+    }
+}
+
+void svp_vpq::partialRollbackVPU(uint64_t checkpointed_tail, bool checkpointed_tail_phase_bit) {
+    uint64_t svp_index = 0;
+    uint64_t svp_tag = 0;
+    
+    do {
+        svp_index = extractIndexFromVPQEntry(vpq_tail);
+        svp_tag = extractTagfromVPQEntry(vpq_tail);
+        if (svp_table[svp_index].tag == svp_tag) {
+            svp_table[svp_index].instance --;
+            assert(svp_table[svp_index].instance >= 0);
+        }
+
+        if (vpq_tail >= 0) {
+            vpq_tail --;
+        }
+        else {
+            vpq_tail = (vpq_size - 1);
+            vpq_tail_phase_bit = !vpq_tail_phase_bit;
+        }
+    }
+    while (vpq_tail != checkpointed_tail);
+
+    assert(vpq_tail_phase_bit == checkpointed_tail_phase_bit);
+}
+
 //-------------------------------------------------------------------
 // Additional functions to support value prediction in the pipeline
 //-------------------------------------------------------------------
@@ -237,7 +321,7 @@ bool svp_vpq::getConfidentPrediction(uint64_t pc, uint64_t& predicted_value) {
     return getPrediction(pc, predicted_value);
 }
 
-bool svp_vpq::isEligible(uint64_t pc, bool is_branch, bool destination_register) {
+bool svp_vpq::isEligible(uint64_t pc, bool is_branch, bool destination_register, fu_type instruction_type, bool load) {
     uint64_t tag = extractTag(pc); // Use a method to extract the tag based on PC
     //check for destination register
     if(!destination_register){
@@ -250,27 +334,21 @@ bool svp_vpq::isEligible(uint64_t pc, bool is_branch, bool destination_register)
         return false;
     }
 
-    if(!svp_predict_int_alu) {
+    // If we are not predicting int ALU instructions and given instruction matches that type, then we don't predict it
+    if(!svp_predict_int_alu && (instruction_type == FU_ALU_S || instruction_type == FU_ALU_C)) {            
         return false;
     }
 
-    if (!svp_predict_fp_alu) {
+    // If we are not predicting FP ALU instructions and given instruction matches that type, then we don't predict it
+    if (!svp_predict_fp_alu && instruction_type == FU_ALU_FP) {
         return false;
     }
 
-    if (!svp_predict_load) {
+    // If we are not predicting loads and given instruction is a load, then we don't predict it
+    if (!svp_predict_load && load) {
         return false;
     }
 
-    // if(!oracle_confidence){
-    //     // Search for the entry with the given PC and check for confidence
-    //     for (uint64_t i = 0; i < svp_size; ++i) {
-    //         if (svp_table[i].tag == tag) {
-    //             // Check if the confidence level of the prediction is saturated.
-    //             return svp_table[i].confidence == svp_conf_max;
-    //         }
-    //     }
-    // } // Do we need conf max to check whether this gets added to VPQ
     return true;
 }
 
@@ -280,4 +358,17 @@ bool svp_vpq::getOracleConfidentPrediction(uint64_t pc, uint64_t& predicted_valu
 
 bool svp_vpq::comparePredictedAndComputed(uint64_t predicted_value, uint64_t computed_value) {
     return (predicted_value == computed_value);
+}
+
+uint64_t svp_vpq::extractIndexFromVPQEntry(int vpq_index) {
+    uint64_t temp_pc = vpq_queue[vpq_index].pc;
+    uint64_t mask = (1ULL << svp_index_bits) - 1;
+    uint64_t index = temp_pc & mask;
+    return index;
+}
+
+uint64_t svp_vpq::extractTagfromVPQEntry(int vpq_index) {
+    uint64_t temp_pc = vpq_queue[vpq_index].pc;
+    uint64_t tag = temp_pc >> svp_index_bits;
+    return tag;
 }

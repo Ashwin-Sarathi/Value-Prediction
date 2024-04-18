@@ -4,6 +4,7 @@
 #include <inttypes.h>
 #include <vector>
 #include "parameters.h"
+#include "fu.h"
 
 /////////////////////////////////////////////////////////////////////
 // Structure 1: Stride Value Predictor Entry (SVP Entry)
@@ -48,6 +49,7 @@ class svp_vpq {
         unsigned int countVPQInstances(uint64_t pc); 
         uint64_t extractIndex(uint64_t pc); 
         uint64_t extractTag(uint64_t pc); 
+        void printSVPStatus(); 
 
         // VPQ Operations
         int enqueue(uint64_t pc);
@@ -58,13 +60,20 @@ class svp_vpq {
         uint64_t generateVPQEntryPC(uint64_t pc);
         void getTailForCheckpoint(uint64_t &tail, bool &tail_phase_bit);
         void addComputedValueToVPQ(unsigned int vpq_index, uint64_t computed_value);
-        void rollBackVPU();
+        uint64_t retComputedValue(uint64_t pc);
+        void printVPQStatus();  
+
+        // Functions to manage VPU rollback
+        void fullRollbackVPU();
+        void partialRollbackVPU(uint64_t checkpointed_tail, bool checkpointed_tail_phase_bit);
 
         // Additional functions to support value prediction in the pipeline
         bool getConfidentPrediction(uint64_t pc, uint64_t& predicted_value);
-        bool isEligible(uint64_t pc, bool eligibility, bool destination_register);
+        bool isEligible(uint64_t pc, bool eligibility, bool destination_register, fu_type instruction_type, bool load);
         bool getOracleConfidentPrediction(uint64_t pc, uint64_t& predicted_value, uint64_t actual_value);
         bool comparePredictedAndComputed(uint64_t predicted_value, uint64_t computed_value);
+        uint64_t extractIndexFromVPQEntry(int vpq_index);
+        uint64_t extractTagfromVPQEntry(int vpq_index);
 };
 
 #endif // VALUE_PREDICTOR_H

@@ -349,6 +349,11 @@ renamer:: renamer(uint64_t n_log_regs, uint64_t n_phys_regs, uint64_t n_branches
 //Writeback Stage
 //-------------------------------------------------------------------
 
+    void renamer:: get_vpq_Checkpoints(uint64_t branch_ID, uint64_t& vpq_tail_checkpoint, bool& vpq_tail_phase_bit_checkpoint) {
+        vpq_tail_checkpoint = branchCheckpoint[branch_ID].vpq_tail;
+        vpq_tail_phase_bit_checkpoint = branchCheckpoint[branch_ID].vpq_tail_phase_bit;
+    }
+
 	void renamer:: write(uint64_t phys_reg, uint64_t value){
         physical_register_file[phys_reg] = value;
     }

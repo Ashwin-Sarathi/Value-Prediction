@@ -142,6 +142,12 @@ void pipeline_t::writeback(unsigned int lane_number) {
             // FIX_ME #15c END
             //********************************************
 
+            // Restore VPQ and SVP
+            uint64_t checkpointed_vpq_tail;
+            bool checkpointed_vpq_tail_phase_bit;
+            REN->get_vpq_Checkpoints(PAY.buf[index].branch_ID, checkpointed_vpq_tail, checkpointed_vpq_tail_phase_bit);
+            VPU.partialRollbackVPU(checkpointed_vpq_tail, checkpointed_vpq_tail_phase_bit);
+
             // Restore the LQ/SQ.
             LSU.restore(PAY.buf[index].LQ_index, PAY.buf[index].LQ_phase, PAY.buf[index].SQ_index, PAY.buf[index].SQ_phase);
 
@@ -189,11 +195,6 @@ void pipeline_t::writeback(unsigned int lane_number) {
       if (VALUE_PREDICTION_ENABLED && PAY.buf[index].predict_flag) {
          // Asserts that if an instruction is predicted, it is also eligible for prediction and that is has a VPQ entry
          assert(PAY.buf[index].vp_eligible && PAY.buf[index].vpq_flag);
-
-         if (PERFECT_VALUE_PREDICTION || oracle_confidence) {
-            // Asserts that in the case of perfect value prediction or oracle prediction, the prediction is always correct
-            assert(PAY.buf[index].C_value.dw = PAY.buf[index].predicted_value);
-         }
 
          if (!VPU.comparePredictedAndComputed(PAY.buf[index].C_value.dw, PAY.buf[index].predicted_value)) {
             // Sets the value mispredict flag in the AL in case the prediction is incorrect
