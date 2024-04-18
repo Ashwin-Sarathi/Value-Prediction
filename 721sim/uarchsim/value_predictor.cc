@@ -110,7 +110,7 @@ bool svp_vpq::getPrediction(uint64_t pc, uint64_t& predicted_value) {
         }
     }
 
-    // No SVP hit
+    // No SVP hit or if conf != conf_max
     return false;
 }
 
@@ -224,6 +224,28 @@ void svp_vpq::getTailForCheckpoint(uint64_t &tail, bool &tail_phase_bit) {
     return;    
 }
 
+void svp_vpq::addComputedValueToVPQ(uint64_t pc, uint64_t computed_value) {
+    uint64_t vpq_pc;
+    vpq_pc = generateVPQEntryPC(pc);
+
+    for(int i = 0; i < vpq_size; ++i){
+        if(vpq_queue[i].pc == vpq_pc){
+            vpq_queue[i].computed_value = computed_value; 
+        }
+    }
+}
+
+
+uint64_t svp_vpq::retComputedValue(uint64_t pc){
+    uint64_t vpq_pc;
+    vpq_pc = generateVPQEntryPC(pc);
+
+    for(int i = 0; i < vpq_size; ++i){
+        if(vpq_queue[i].pc == vpq_pc){
+            return vpq_queue[vpq_pc].computed_value; 
+        }
+    }
+}
 //-------------------------------------------------------------------
 // Additional functions to support value prediction in the pipeline
 //-------------------------------------------------------------------
@@ -245,18 +267,34 @@ bool svp_vpq::isEligible(uint64_t pc, bool is_branch, bool destination_register)
         return false;
     }
 
-    if(!oracle_confidence){
-        // Search for the entry with the given PC and check for confidence
-        for (uint64_t i = 0; i < svp_size; ++i) {
-            if (svp_table[i].tag == tag) {
-                // Check if the confidence level of the prediction is saturated.
-                return svp_table[i].confidence == svp_conf_max;
-            }
-        }
-    } // Do we need conf max to check whether this gets added to VPQ
+    if(!svp_predict_int_alu) {
+        return false;
+    }
+
+    if (!svp_predict_fp_alu) {
+        return false;
+    }
+
+    if (!svp_predict_load) {
+        return false;
+    }
+
+    // if(!oracle_confidence){
+    //     // Search for the entry with the given PC and check for confidence
+    //     for (uint64_t i = 0; i < svp_size; ++i) {
+    //         if (svp_table[i].tag == tag) {
+    //             // Check if the confidence level of the prediction is saturated.
+    //             return svp_table[i].confidence == svp_conf_max;
+    //         }
+    //     }
+    // } // Do we need conf max to check whether this gets added to VPQ
     return true;
 }
 
 bool svp_vpq::getOracleConfidentPrediction(uint64_t pc, uint64_t& predicted_value, uint64_t actual_value) {
     return getOraclePrediction(pc, predicted_value, actual_value);
+}
+
+bool svp_vpq::comparePredictedAndComputed(uint64_t predicted_value, uint64_t computed_value) {
+    return (predicted_value == computed_value);
 }

@@ -319,4 +319,3 @@ void issue_queue::dump_iq(pipeline_t* proc, unsigned int index,FILE* file)
   ifprintf(logging_on,file,"\n");
   ifprintf(logging_on,file,"\n");
 }
-

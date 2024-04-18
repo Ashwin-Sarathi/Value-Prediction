@@ -57,11 +57,14 @@ class svp_vpq {
         bool stallVPQ(uint64_t bundle_inst);
         uint64_t generateVPQEntryPC(uint64_t pc);
         void getTailForCheckpoint(uint64_t &tail, bool &tail_phase_bit);
+        void addComputedValueToVPQ(uint64_t pc, uint64_t computed_value);
+        uint64_t retComputedValue(uint64_t pc);
 
         // Additional functions to support value prediction in the pipeline
         bool getConfidentPrediction(uint64_t pc, uint64_t& predicted_value);
         bool isEligible(uint64_t pc, bool eligibility, bool destination_register);
         bool getOracleConfidentPrediction(uint64_t pc, uint64_t& predicted_value, uint64_t actual_value);
+        bool comparePredictedAndComputed(uint64_t predicted_value, uint64_t computed_value);
 };
 
 #endif // VALUE_PREDICTOR_H

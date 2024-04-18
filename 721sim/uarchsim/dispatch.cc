@@ -209,8 +209,8 @@ void pipeline_t::dispatch() {
       // As long as the mode is perfect value prediction, the instruction is good, it is not a branch and it has a valid destination, 
       // it is predicted.
       // For perfect value prediction, we grab this value from the functional simulator and feed it to the destination physical register.
-      PAY.buf[index].predict_flag = false;
-      if (PERFECT_VALUE_PREDICTION && PAY.buf[index].good_instruction && !PAY.buf[index].checkpoint && PAY.buf[index].C_valid) {
+      // PAY.buf[index].predict_flag = false;
+      if (VALUE_PREDICTION_ENABLED && PERFECT_VALUE_PREDICTION && PAY.buf[index].good_instruction && !PAY.buf[index].checkpoint && PAY.buf[index].C_valid) {
          PAY.buf[index].predict_flag = true;
          actual = get_pipe()->peek(PAY.buf[index].db_index);
          PAY.buf[index].predicted_value = actual->a_rdst[0].value;
