@@ -2,16 +2,16 @@
 #include "trap.h"
 #include "mmu.h"
 
-//fixed
+// fixed
 
-void pipeline_t::retire(size_t& instret) {
+void pipeline_t::retire(size_t &instret)
+{
    bool head_valid;
    bool completed, exception, load_viol, br_misp, val_misp, load, store, branch, amo, csr;
    reg_t offending_PC;
 
    bool amo_success;
    trap_t *trap = NULL; // Supress uninitialized warning.
-
 
    // FIX_ME #17a
    // Call the precommit() function of the renamer module.  This tells the renamer module to return
@@ -55,7 +55,8 @@ void pipeline_t::retire(size_t& instret) {
    // FIX_ME #17a END
    //********************************************
 
-   if (head_valid && completed) {    // AL head exists and completed
+   if (head_valid && completed)
+   { // AL head exists and completed
 
       // Sanity checks of the 'amo' and 'csr' flags.
       assert(!amo || IS_AMO(PAY.buf[PAY.head].flags));
@@ -66,128 +67,183 @@ void pipeline_t::retire(size_t& instret) {
       //    The atomic may raise an exception here.
       // 2. If the instruction is a csr instruction, execute it now.
       //    The csr instruction may raise an exception here.
-      if (!exception) {
-	 if (amo && !(load || store)) {	// amo, excluding load-with-reservation (LR) and store-conditional (SC)
+      if (!exception)
+      {
+         if (amo && !(load || store))
+         { // amo, excluding load-with-reservation (LR) and store-conditional (SC)
             exception = execute_amo();
          }
-         else if (csr) {
+         else if (csr)
+         {
             exception = execute_csr();
          }
 
          if (exception)
-	    REN->set_exception(PAY.buf[PAY.head].AL_index);
+            REN->set_exception(PAY.buf[PAY.head].AL_index);
       }
 
-      if (!exception && !load_viol) {
-	 //
+      if (!exception && !load_viol)
+      {
+         //
          // FIX_ME #17b
-	 // Commit the instruction at the head of the active list.
-	 //
+         // Commit the instruction at the head of the active list.
+         //
          //********************************************
          // FIX_ME #17b BEGIN
          //********************************************
-         if (PAY.buf[PAY.head].predict_flag) { // MIGHT HAVE TO CHANGE
-            vpmeas_conf_corr ++;
-            vpmeas_eligible ++;
-         }
-         else {
+         // if (PAY.buf[PAY.head].predict_flag) { // MIGHT HAVE TO CHANGE
+         //    vpmeas_conf_corr ++;
+         //    vpmeas_eligible ++;
+         // }
+         // else {
+         //    vpmeas_ineligible++;
+         //    vpmeas_ineligible_type++;
+         // }
+
+         // Metrics
+
+         if (!PAY.buf[PAY.head].vp_eligible)
+         { // ineligible
             vpmeas_ineligible++;
-            vpmeas_ineligible_type++;
+            if (PAY.buf[PAY.head].vp_ineligible_instruction_type)
+            { // ineligible based on instruction type
+               vpmeas_ineligible_type++;
+            }
+            if (PAY.buf[PAY.head].vp_ineligible_vpq_policy)
+            { // VPQ_full_policy=1 and a VPQ entry could not be allocated
+               vpmeas_ineligible_drop++;
+            }
+         }
+         else if (PAY.buf[PAY.head].vp_eligible)
+         { // eligible
+            vpmeas_eligible++;
+            if (PAY.buf[PAY.head].vp_eligible_SVP_miss)
+            { // no prediction available
+               vpmeas_miss++;
+            }
+            if (PAY.buf[PAY.head].vp_eligible_confidence && PAY.buf[PAY.head].vp_eligible_correctness)
+            { // confident and correct
+               vpmeas_conf_corr++;
+            }
+            if (PAY.buf[PAY.head].vp_eligible_confidence && !PAY.buf[PAY.head].vp_eligible_correctness)
+            { // confident and incorrect
+               vpmeas_conf_incorr++;
+            }
+            if (!PAY.buf[PAY.head].vp_eligible_confidence && PAY.buf[PAY.head].vp_eligible_correctness)
+            { // unconfident and correct
+               vpmeas_unconf_corr++;
+            }
+            if (!PAY.buf[PAY.head].vp_eligible_confidence && !PAY.buf[PAY.head].vp_eligible_correctness)
+            { // unconfident and incorrect
+               vpmeas_unconf_incorr++;
+            }
          }
 
-         //When an instruction that was a allocated a VPQ entry at rename, it calls the train function 
-         if(PAY.buf[PAY.head].vpq_flag){
-            uint64_t computed_value_vpq; 
-            computed_value_vpq = VPU.retComputedValue(PAY.buf[PAY.head].vpq_index); 
-            VPU.trainOrReplace(PAY.buf[PAY.head].pc, computed_value_vpq); 
+         // When an instruction that was a allocated a VPQ entry at rename, it calls the train function
+         if (PAY.buf[PAY.head].vpq_flag)
+         {
+            uint64_t computed_value_vpq;
+            computed_value_vpq = VPU.retComputedValue(PAY.buf[PAY.head].vpq_index);
+            VPU.trainOrReplace(PAY.buf[PAY.head].pc, computed_value_vpq);
          }
 
-         REN->commit(); 
+         REN->commit();
          //********************************************
          // FIX_ME #17b END
          //********************************************
 
-	 // If the committed instruction is a load or store, signal the LSU to commit its oldest load or store, respectively.
-         if (load || store) {
-            assert(load != store);   // Make sure that the same instruction does not have both flags set.
-	    assert(!PAY.buf[PAY.head].split_store || !PAY.buf[PAY.head].upper);   // Assert that the second uop of a split-store signals the LSU to commit.
-	    LSU.train(load);	     // Train MDP and update stats.
+         // If the committed instruction is a load or store, signal the LSU to commit its oldest load or store, respectively.
+         if (load || store)
+         {
+            assert(load != store);                                              // Make sure that the same instruction does not have both flags set.
+            assert(!PAY.buf[PAY.head].split_store || !PAY.buf[PAY.head].upper); // Assert that the second uop of a split-store signals the LSU to commit.
+            LSU.train(load);                                                    // Train MDP and update stats.
             amo_success = LSU.commit(load, amo);
-            assert(amo_success);     // Assert store-conditionals (SC) are successful.
+            assert(amo_success); // Assert store-conditionals (SC) are successful.
          }
 
          // If the committed instruction is a branch, signal the branch predictor to commit its oldest branch.
-         if (branch) {
-	    // TODO (ER): Change the branch predictor interface as follows: FetchUnit->commit().
+         if (branch)
+         {
+            // TODO (ER): Change the branch predictor interface as follows: FetchUnit->commit().
             FetchUnit->commit(PAY.buf[PAY.head].pred_tag);
          }
 
-         if (IS_FP_OP(PAY.buf[PAY.head].flags)) {
+         if (IS_FP_OP(PAY.buf[PAY.head].flags))
+         {
             // post the FP exception bit to CSR fflags (the Accrued Exception Flags)
             get_state()->fflags |= PAY.buf[PAY.head].fflags;
          }
 
-	 // Check results.
-	 checker();
+         // Check results.
+         checker();
 
-	 // Keep track of the number of retired instructions.
-	 // Split instructions should only count as one architectural instruction, therefore, only the second uop should increment the count.
-	 if (!PAY.buf[PAY.head].split || !PAY.buf[PAY.head].upper) {
-	    num_insn++;
+         // Keep track of the number of retired instructions.
+         // Split instructions should only count as one architectural instruction, therefore, only the second uop should increment the count.
+         if (!PAY.buf[PAY.head].split || !PAY.buf[PAY.head].upper)
+         {
+            num_insn++;
             instret++;
-	    inc_counter(commit_count);
-	 }
-	 if (PAY.buf[PAY.head].split && PAY.buf[PAY.head].upper)
-	    inc_counter(split_count);
+            inc_counter(commit_count);
+         }
+         if (PAY.buf[PAY.head].split && PAY.buf[PAY.head].upper)
+            inc_counter(split_count);
 
-	 if (amo || csr) {   // Resume the stalled fetch unit after committing a serializing instruction.
+         if (amo || csr)
+         { // Resume the stalled fetch unit after committing a serializing instruction.
             insn_t inst = PAY.buf[PAY.head].inst;
-	    reg_t next_inst_pc;
-            if ((inst.funct3() == FN3_SC_SB) && (inst.funct12() == FN12_SRET))  // SRET instruction.
+            reg_t next_inst_pc;
+            if ((inst.funct3() == FN3_SC_SB) && (inst.funct12() == FN12_SRET)) // SRET instruction.
                next_inst_pc = state.epc;
-	    else
-	       next_inst_pc = INCREMENT_PC(PAY.buf[PAY.head].pc);
+            else
+               next_inst_pc = INCREMENT_PC(PAY.buf[PAY.head].pc);
 
-	    // The serializing instruction stalled the fetch unit so the pipeline is now empty. Resume fetch.
+            // The serializing instruction stalled the fetch unit so the pipeline is now empty. Resume fetch.
             FetchUnit->flush(next_inst_pc);
 
-	    // Pop the instruction from PAY.
-	    if (!PAY.buf[PAY.head].split) PAY.pop();
-	    PAY.pop();
-	 }
-	 else if (br_misp || val_misp) {   // Complete-squash the pipeline after committing a mispredicted branch or
-	                                   // a value-mispredicted instruction, if "approach #1 recovery" is configured.
-	    reg_t next_inst_pc;
-	    if (br_misp)
+            // Pop the instruction from PAY.
+            if (!PAY.buf[PAY.head].split)
+               PAY.pop();
+            PAY.pop();
+         }
+         else if (br_misp || val_misp)
+         { // Complete-squash the pipeline after committing a mispredicted branch or
+           // a value-mispredicted instruction, if "approach #1 recovery" is configured.
+            reg_t next_inst_pc;
+            if (br_misp)
                next_inst_pc = PAY.buf[PAY.head].c_next_pc;
-	    else
-	       next_inst_pc = INCREMENT_PC(PAY.buf[PAY.head].pc);
+            else
+               next_inst_pc = INCREMENT_PC(PAY.buf[PAY.head].pc);
 
             // The head instruction was already committed above (fix #17b).
-	    // Squash all instructions after it.
+            // Squash all instructions after it.
             squash_complete(next_inst_pc);
             inc_counter(recovery_count);
 
-	    // Pop the instruction from PAY.
-	    if (!PAY.buf[PAY.head].split) PAY.pop();
-	    PAY.pop();
+            // Pop the instruction from PAY.
+            if (!PAY.buf[PAY.head].split)
+               PAY.pop();
+            PAY.pop();
 
             // Flush PAY.
             PAY.clear();
          }
-         else {
-	    // Pop the instruction from PAY.
-	    if (!PAY.buf[PAY.head].split) PAY.pop();
-	    PAY.pop();
+         else
+         {
+            // Pop the instruction from PAY.
+            if (!PAY.buf[PAY.head].split)
+               PAY.pop();
+            PAY.pop();
          }
       }
-      else if (!exception && load_viol) {
-	 // This is a mispredicted load owing to speculative memory disambiguation (not value prediction).
-	 // Therefore the load is incorrect and not committed.
+      else if (!exception && load_viol)
+      {
+         // This is a mispredicted load owing to speculative memory disambiguation (not value prediction).
+         // Therefore the load is incorrect and not committed.
          assert(load);
 
-	 // Train MDP and update stats.
-	 LSU.train(load);
+         // Train MDP and update stats.
+         LSU.train(load);
 
          // Full squash, including the mispredicted load, and restart fetching from the load.
          squash_complete(offending_PC);
@@ -197,7 +253,8 @@ void pipeline_t::retire(size_t& instret) {
          // Flush PAY.
          PAY.clear();
       }
-      else {   // exception
+      else
+      { // exception
          trap = PAY.buf[PAY.head].trap.get();
 
          // CSR exceptions are micro-architectural exceptions and are
@@ -206,16 +263,18 @@ void pipeline_t::retire(size_t& instret) {
          // in the ISA.
          // This is a serialize trap - Refetch the CSR instruction
          reg_t jump_PC;
-         if (trap->cause() == CAUSE_CSR_INSTRUCTION) {
+         if (trap->cause() == CAUSE_CSR_INSTRUCTION)
+         {
             jump_PC = offending_PC;
-         } 
-         else {
+         }
+         else
+         {
             jump_PC = take_trap(*trap, offending_PC);
          }
 
          // Keep track of the number of retired instructions.
-	 instret++;
-	 num_insn++;	
+         instret++;
+         num_insn++;
          inc_counter(commit_count);
          inc_counter(exception_count);
 
@@ -232,93 +291,100 @@ void pipeline_t::retire(size_t& instret) {
    }
 }
 
-
-bool pipeline_t::execute_amo() {
+bool pipeline_t::execute_amo()
+{
    unsigned int index = PAY.head;
    insn_t inst = PAY.buf[index].inst;
    reg_t read_amo_value = 0xdeadbeef;
    bool exception = false;
 
-   try {
-      if (inst.funct3() == FN3_AMO_W) {
+   try
+   {
+      if (inst.funct3() == FN3_AMO_W)
+      {
          read_amo_value = mmu->load_int32(PAY.buf[index].A_value.dw);
          uint32_t write_amo_value;
-         switch (inst.funct5()) {
-            case FN5_AMO_SWAP:
-               write_amo_value = PAY.buf[index].B_value.dw;
-               break;
-            case FN5_AMO_ADD:
-               write_amo_value = PAY.buf[index].B_value.dw + read_amo_value;
-               break;
-            case FN5_AMO_XOR:
-               write_amo_value = PAY.buf[index].B_value.dw ^ read_amo_value;
-               break;
-            case FN5_AMO_AND:
-               write_amo_value = PAY.buf[index].B_value.dw & read_amo_value;
-               break;
-            case FN5_AMO_OR:
-               write_amo_value = PAY.buf[index].B_value.dw | read_amo_value;
-               break;
-            case FN5_AMO_MIN:
-               write_amo_value = std::min(int32_t(PAY.buf[index].B_value.dw), int32_t(read_amo_value));
-               break;
-            case FN5_AMO_MAX:
-               write_amo_value = std::max(int32_t(PAY.buf[index].B_value.dw), int32_t(read_amo_value));
-               break;
-            case FN5_AMO_MINU:
-               write_amo_value = std::min(uint32_t(PAY.buf[index].B_value.dw), uint32_t(read_amo_value));
-               break;
-            case FN5_AMO_MAXU:
-               write_amo_value = std::max(uint32_t(PAY.buf[index].B_value.dw), uint32_t(read_amo_value));
-               break;
-            default:
-               assert(0);
-               break;
+         switch (inst.funct5())
+         {
+         case FN5_AMO_SWAP:
+            write_amo_value = PAY.buf[index].B_value.dw;
+            break;
+         case FN5_AMO_ADD:
+            write_amo_value = PAY.buf[index].B_value.dw + read_amo_value;
+            break;
+         case FN5_AMO_XOR:
+            write_amo_value = PAY.buf[index].B_value.dw ^ read_amo_value;
+            break;
+         case FN5_AMO_AND:
+            write_amo_value = PAY.buf[index].B_value.dw & read_amo_value;
+            break;
+         case FN5_AMO_OR:
+            write_amo_value = PAY.buf[index].B_value.dw | read_amo_value;
+            break;
+         case FN5_AMO_MIN:
+            write_amo_value = std::min(int32_t(PAY.buf[index].B_value.dw), int32_t(read_amo_value));
+            break;
+         case FN5_AMO_MAX:
+            write_amo_value = std::max(int32_t(PAY.buf[index].B_value.dw), int32_t(read_amo_value));
+            break;
+         case FN5_AMO_MINU:
+            write_amo_value = std::min(uint32_t(PAY.buf[index].B_value.dw), uint32_t(read_amo_value));
+            break;
+         case FN5_AMO_MAXU:
+            write_amo_value = std::max(uint32_t(PAY.buf[index].B_value.dw), uint32_t(read_amo_value));
+            break;
+         default:
+            assert(0);
+            break;
          }
          mmu->store_uint32(PAY.buf[index].A_value.dw, write_amo_value);
       }
-      else if (inst.funct3() == FN3_AMO_D) {
+      else if (inst.funct3() == FN3_AMO_D)
+      {
          read_amo_value = mmu->load_int64(PAY.buf[index].A_value.dw);
          reg_t write_amo_value;
-         switch (inst.funct5()) {
-            case FN5_AMO_SWAP:
-               write_amo_value = PAY.buf[index].B_value.dw;
-               break;
-            case FN5_AMO_ADD:
-               write_amo_value = PAY.buf[index].B_value.dw + read_amo_value;
-               break;
-            case FN5_AMO_XOR:
-               write_amo_value = PAY.buf[index].B_value.dw ^ read_amo_value;
-               break;
-            case FN5_AMO_AND:
-               write_amo_value = PAY.buf[index].B_value.dw & read_amo_value;
-               break;
-            case FN5_AMO_OR:
-               write_amo_value = PAY.buf[index].B_value.dw | read_amo_value;
-               break;
-            case FN5_AMO_MIN:
-               write_amo_value = std::min(int64_t(PAY.buf[index].B_value.dw), int64_t(read_amo_value));
-               break;
-            case FN5_AMO_MAX:
-               write_amo_value = std::max(int64_t(PAY.buf[index].B_value.dw), int64_t(read_amo_value));
-               break;
-            case FN5_AMO_MINU:
-               write_amo_value = std::min(PAY.buf[index].B_value.dw, read_amo_value);
-               break;
-            case FN5_AMO_MAXU:
-               write_amo_value = std::max(PAY.buf[index].B_value.dw, read_amo_value);
-               break;
-            default:
-               assert(0);
-               break;
+         switch (inst.funct5())
+         {
+         case FN5_AMO_SWAP:
+            write_amo_value = PAY.buf[index].B_value.dw;
+            break;
+         case FN5_AMO_ADD:
+            write_amo_value = PAY.buf[index].B_value.dw + read_amo_value;
+            break;
+         case FN5_AMO_XOR:
+            write_amo_value = PAY.buf[index].B_value.dw ^ read_amo_value;
+            break;
+         case FN5_AMO_AND:
+            write_amo_value = PAY.buf[index].B_value.dw & read_amo_value;
+            break;
+         case FN5_AMO_OR:
+            write_amo_value = PAY.buf[index].B_value.dw | read_amo_value;
+            break;
+         case FN5_AMO_MIN:
+            write_amo_value = std::min(int64_t(PAY.buf[index].B_value.dw), int64_t(read_amo_value));
+            break;
+         case FN5_AMO_MAX:
+            write_amo_value = std::max(int64_t(PAY.buf[index].B_value.dw), int64_t(read_amo_value));
+            break;
+         case FN5_AMO_MINU:
+            write_amo_value = std::min(PAY.buf[index].B_value.dw, read_amo_value);
+            break;
+         case FN5_AMO_MAXU:
+            write_amo_value = std::max(PAY.buf[index].B_value.dw, read_amo_value);
+            break;
+         default:
+            assert(0);
+            break;
          }
          mmu->store_uint64(PAY.buf[index].A_value.dw, write_amo_value);
       }
-      else {
+      else
+      {
          assert(0);
       }
    }
-   catch (mem_trap_t& t) {
+   catch (mem_trap_t &t)
+   {
       exception = true;
       assert(t.cause() == CAUSE_FAULT_STORE || t.cause() == CAUSE_MISALIGNED_STORE);
       PAY.buf[index].trap.post(t);
@@ -329,17 +395,18 @@ bool pipeline_t::execute_amo() {
 
    // Write the loaded value to the destination physical register.
    // "amoswap" may have rd=x0 (effectively no destination register) to implement a "sequentially consistent store" (see RISCV ISA spec).
-   //assert(PAY.buf[index].C_valid);
-   if (PAY.buf[index].C_valid) {
+   // assert(PAY.buf[index].C_valid);
+   if (PAY.buf[index].C_valid)
+   {
       REN->set_ready(PAY.buf[index].C_phys_reg);
       REN->write(PAY.buf[index].C_phys_reg, PAY.buf[index].C_value.dw);
    }
 
-   return(exception);
+   return (exception);
 }
 
-
-bool pipeline_t::execute_csr() {
+bool pipeline_t::execute_csr()
+{
    unsigned int index = PAY.head;
    insn_t inst = PAY.buf[index].inst;
    pipeline_t *p = this; // *p is assumed by the validate_csr and require_supervisor macros.
@@ -353,66 +420,72 @@ bool pipeline_t::execute_csr() {
    reg_t old_value;
    reg_t new_value;
 
-   try {
-      if (inst.funct3() != FN3_SC_SB) {
-         switch (inst.funct3()) {
-            case FN3_CLR:
-               csr = validate_csr(PAY.buf[index].CSR_addr, true);
-	       old_value = get_pcr(csr);
-               new_value = (old_value & ~PAY.buf[index].A_value.dw);
-               set_pcr(csr, new_value);
-               break;
-            case FN3_RW:
-               csr = validate_csr(PAY.buf[index].CSR_addr, true);
-	       old_value = get_pcr(csr);
-               new_value = PAY.buf[index].A_value.dw;
-               set_pcr(csr, new_value);
-               break;
-            case FN3_SET:
-               csr = validate_csr(PAY.buf[index].CSR_addr, (PAY.buf[index].A_log_reg != 0));
-	       old_value = get_pcr(csr);
-               new_value = (old_value | PAY.buf[index].A_value.dw);
-               set_pcr(csr, new_value);
-               break;
-            case FN3_CLR_IMM:
-               csr = validate_csr(PAY.buf[index].CSR_addr, true);
-	       old_value = get_pcr(csr);
-               new_value = (old_value & ~(reg_t)PAY.buf[index].A_log_reg);
-               set_pcr(csr, new_value);
-               break;
-            case FN3_RW_IMM:
-               csr = validate_csr(PAY.buf[index].CSR_addr, true);
-	       old_value = get_pcr(csr);
-               new_value = (reg_t)PAY.buf[index].A_log_reg;
-               set_pcr(csr, new_value);
-               break;
-            case FN3_SET_IMM:
-               csr = validate_csr(PAY.buf[index].CSR_addr, true);
-	       old_value = get_pcr(csr);
-               new_value = (old_value | (reg_t)PAY.buf[index].A_log_reg);
-               set_pcr(csr, new_value);
-               break;
-            default:
-               assert(0);
-               break;
+   try
+   {
+      if (inst.funct3() != FN3_SC_SB)
+      {
+         switch (inst.funct3())
+         {
+         case FN3_CLR:
+            csr = validate_csr(PAY.buf[index].CSR_addr, true);
+            old_value = get_pcr(csr);
+            new_value = (old_value & ~PAY.buf[index].A_value.dw);
+            set_pcr(csr, new_value);
+            break;
+         case FN3_RW:
+            csr = validate_csr(PAY.buf[index].CSR_addr, true);
+            old_value = get_pcr(csr);
+            new_value = PAY.buf[index].A_value.dw;
+            set_pcr(csr, new_value);
+            break;
+         case FN3_SET:
+            csr = validate_csr(PAY.buf[index].CSR_addr, (PAY.buf[index].A_log_reg != 0));
+            old_value = get_pcr(csr);
+            new_value = (old_value | PAY.buf[index].A_value.dw);
+            set_pcr(csr, new_value);
+            break;
+         case FN3_CLR_IMM:
+            csr = validate_csr(PAY.buf[index].CSR_addr, true);
+            old_value = get_pcr(csr);
+            new_value = (old_value & ~(reg_t)PAY.buf[index].A_log_reg);
+            set_pcr(csr, new_value);
+            break;
+         case FN3_RW_IMM:
+            csr = validate_csr(PAY.buf[index].CSR_addr, true);
+            old_value = get_pcr(csr);
+            new_value = (reg_t)PAY.buf[index].A_log_reg;
+            set_pcr(csr, new_value);
+            break;
+         case FN3_SET_IMM:
+            csr = validate_csr(PAY.buf[index].CSR_addr, true);
+            old_value = get_pcr(csr);
+            new_value = (old_value | (reg_t)PAY.buf[index].A_log_reg);
+            set_pcr(csr, new_value);
+            break;
+         default:
+            assert(0);
+            break;
          }
       }
-      else if (inst.funct12() == FN12_SRET) {
+      else if (inst.funct12() == FN12_SRET)
+      {
          // This is a macro defined in decode.h.
          // This will throw a privileged_instruction trap if processor not in supervisor mode.
-         require_supervisor; 
+         require_supervisor;
          csr = validate_csr(PAY.buf[index].CSR_addr, true);
          old_value = get_pcr(csr);
          new_value = ((old_value & ~(SR_S | SR_EI)) | ((old_value & SR_PS) ? SR_S : 0) | ((old_value & SR_PEI) ? SR_EI : 0));
          set_pcr(csr, new_value);
       }
-      else {
+      else
+      {
          // SCALL and SBREAK.
          // These skip the IQ and execution lanes (completed in Dispatch Stage).
          assert(0);
       }
 
-      if (PAY.buf[index].C_valid) {
+      if (PAY.buf[index].C_valid)
+      {
          // Write the result (old value of CSR) to the payload buffer for checking purposes.
          PAY.buf[index].C_value.dw = old_value;
          // Write the result (old value of CSR) to the physical destination register.
@@ -420,15 +493,17 @@ bool pipeline_t::execute_csr() {
          REN->write(PAY.buf[index].C_phys_reg, PAY.buf[index].C_value.dw);
       }
    }
-   catch (trap_t& t) {
+   catch (trap_t &t)
+   {
       exception = true;
       assert(t.cause() == CAUSE_PRIVILEGED_INSTRUCTION || t.cause() == CAUSE_FP_DISABLED);
       PAY.buf[index].trap.post(t);
    }
-   catch (serialize_t& s) {
+   catch (serialize_t &s)
+   {
       exception = true;
       PAY.buf[index].trap.post(trap_csr_instruction());
    }
 
-   return(exception);
+   return (exception);
 }

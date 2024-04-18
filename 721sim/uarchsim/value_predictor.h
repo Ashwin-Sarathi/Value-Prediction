@@ -4,6 +4,8 @@
 #include <inttypes.h>
 #include <vector>
 #include "parameters.h"
+#include "fu.h"
+
 
 /////////////////////////////////////////////////////////////////////
 // Structure 1: Stride Value Predictor Entry (SVP Entry)
@@ -47,7 +49,8 @@ class svp_vpq {
         bool getOraclePrediction(uint64_t pc, uint64_t& predicted_value, uint64_t actual_value); // Retrieve oracle prediction 
         unsigned int countVPQInstances(uint64_t pc); 
         uint64_t extractIndex(uint64_t pc); 
-        uint64_t extractTag(uint64_t pc); 
+        uint64_t extractTag(uint64_t pc);
+        void printSVPStatus();  
 
         // VPQ Operations
         int enqueue(uint64_t pc);
@@ -60,12 +63,14 @@ class svp_vpq {
         void addComputedValueToVPQ(unsigned int vpq_index, uint64_t computed_value);
         void rollBackVPU();
         uint64_t retComputedValue(uint64_t pc);
+        void printVPQStatus();  
 
         // Additional functions to support value prediction in the pipeline
         bool getConfidentPrediction(uint64_t pc, uint64_t& predicted_value);
-        bool isEligible(uint64_t pc, bool eligibility, bool destination_register);
+        bool isEligible(uint64_t pc, bool eligibility, bool destination_register, fu_type instruction_type, bool load);
         bool getOracleConfidentPrediction(uint64_t pc, uint64_t& predicted_value, uint64_t actual_value);
         bool comparePredictedAndComputed(uint64_t predicted_value, uint64_t computed_value);
+    
 };
 
 #endif // VALUE_PREDICTOR_H

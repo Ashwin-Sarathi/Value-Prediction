@@ -190,10 +190,10 @@ void pipeline_t::writeback(unsigned int lane_number) {
          // Asserts that if an instruction is predicted, it is also eligible for prediction and that is has a VPQ entry
          assert(PAY.buf[index].vp_eligible && PAY.buf[index].vpq_flag);
 
-         if (PERFECT_VALUE_PREDICTION || oracle_confidence) {
-            // Asserts that in the case of perfect value prediction or oracle prediction, the prediction is always correct
-            assert(PAY.buf[index].C_value.dw = PAY.buf[index].predicted_value);
-         }
+         // if (PERFECT_VALUE_PREDICTION || oracle_confidence) {
+         //    // Asserts that in the case of perfect value prediction or oracle prediction, the prediction is always correct
+         //    assert(PAY.buf[index].C_value.dw = PAY.buf[index].predicted_value);
+         // }
 
          if (!VPU.comparePredictedAndComputed(PAY.buf[index].C_value.dw, PAY.buf[index].predicted_value)) {
             // Sets the value mispredict flag in the AL in case the prediction is incorrect

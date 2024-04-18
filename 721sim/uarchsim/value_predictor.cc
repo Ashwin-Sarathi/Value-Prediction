@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <cassert>
 #include <iostream>
+#include <cstdio>
 
 using namespace std;
 
@@ -132,6 +133,18 @@ bool svp_vpq::getOraclePrediction(uint64_t pc, uint64_t& predicted_value, uint64
     return false;
 }
 
+void svp_vpq::printSVPStatus() {
+    fprintf(stdout, "SVP Entries:\n");
+    fprintf(stdout, "Index\tTag\tLast Value\tStride\tConfidence\tInstance\n");
+    for (uint64_t i = 0; i < svp_size; ++i) {
+        const auto& entry = svp_table[i];
+        if (entry.tag != 0 || entry.last_value != 0) {  // Print only initialized entries
+            fprintf(stdout, "%lu\t%lu\t%lu\t%ld\t%u\t%u\n",
+                    i, entry.tag, entry.last_value, entry.stride, entry.confidence, entry.instance);
+        }
+    }
+}
+
 //-------------------------------------------------------------------
 // VPQ Operations
 //-------------------------------------------------------------------
@@ -233,6 +246,34 @@ uint64_t svp_vpq::retComputedValue(uint64_t index){
     return vpq_queue[index].computed_value; 
 }
 
+void svp_vpq::printVPQStatus() {
+
+    fprintf(stdout, "VPQ State:\n");
+    fprintf(stdout, "Head: %u (Phase Bit: %d)\n", vpq_head, vpq_head_phase_bit);
+    fprintf(stdout, "Tail: %u (Phase Bit: %d)\n", vpq_tail, vpq_tail_phase_bit);
+    fprintf(stdout, "\n");
+
+    fprintf(stdout, "VPQ Entries:\n");
+    fprintf(stdout, "Index\tPC\tComputed Value\n");
+
+    unsigned int i = vpq_head;
+    while (true) {
+        const auto& entry = vpq_queue[i];
+        fprintf(stdout, "%u\t%lu\t%lu\n", i, entry.pc, entry.computed_value);
+
+        if (i == vpq_tail) {
+            break; 
+        }
+
+        i = (i + 1) % vpq_size; //wrap around at end of queue 
+
+        if (i == vpq_head) {
+            break; 
+        }
+    }
+}
+
+
 //-------------------------------------------------------------------
 // Additional functions to support value prediction in the pipeline
 //-------------------------------------------------------------------
@@ -241,7 +282,7 @@ bool svp_vpq::getConfidentPrediction(uint64_t pc, uint64_t& predicted_value) {
     return getPrediction(pc, predicted_value);
 }
 
-bool svp_vpq::isEligible(uint64_t pc, bool is_branch, bool destination_register) {
+bool svp_vpq::isEligible(uint64_t pc, bool is_branch, bool destination_register, fu_type instruction_type, bool load) {
     uint64_t tag = extractTag(pc); // Use a method to extract the tag based on PC
     //check for destination register
     if(!destination_register){
@@ -254,15 +295,21 @@ bool svp_vpq::isEligible(uint64_t pc, bool is_branch, bool destination_register)
         return false;
     }
 
-    if(!svp_predict_int_alu) {
+    //if dont predict integer ALU instructions
+    //check for  function unit for simple integer ALU operations &  function unit for complex integer ALU operations (check fu.h)  --> these are set in the payload at decode 
+    if(!svp_predict_int_alu && (instruction_type == FU_ALU_S || instruction_type == FU_ALU_C)) {            
         return false;
     }
 
-    if (!svp_predict_fp_alu) {
+    //if dont predict iflt.pt. ALU instructions
+    //check for function unit for floating-point ALU operations (check fu.h) --> these are set in the payload at decode 
+    if (!svp_predict_fp_alu && instruction_type == FU_ALU_FP) {
         return false;
     }
 
-    if (!svp_predict_load) {
+    //if dont predict load instructions
+    //check for is_load  (check pipeline.h) --> takes the payload flags as the argument 
+    if (!svp_predict_load && load) {
         return false;
     }
     return true;
