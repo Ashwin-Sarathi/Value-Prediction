@@ -143,12 +143,13 @@ uint64_t svp_vpq::generateVPQEntryPC(uint64_t pc) {
     return pc;
 }
 
-bool svp_vpq::enqueue(uint64_t pc) {
+int svp_vpq::enqueue(uint64_t pc) {
     // if (isVPQFull()) {
     //     std::cerr << "ERROR: Attempted to enqueue to a full Value Prediction Queue.\n";
     //     return false;
     // }
     assert(!isVPQFull());
+    unsigned int old_tail = vpq_tail;
 
     uint64_t vpq_pc = generateVPQEntryPC(pc);
     vpq_queue[vpq_tail].pc = vpq_pc;
@@ -159,7 +160,7 @@ bool svp_vpq::enqueue(uint64_t pc) {
         vpq_tail_phase_bit = !vpq_tail_phase_bit;
         vpq_tail = 0;
     }
-    return true;
+    return old_tail;
 }
 
 bool svp_vpq::dequeue(uint64_t pc) {
@@ -224,10 +225,8 @@ void svp_vpq::getTailForCheckpoint(uint64_t &tail, bool &tail_phase_bit) {
     return;    
 }
 
-void svp_vpq::addComputedValueToVPQ(uint64_t pc, uint64_t computed_value) {
-    uint64_t vpq_pc;
-    vpq_pc = generateVPQEntryPC(pc);
-    vpq_queue[vpq_pc].computed_value = computed_value;
+void svp_vpq::addComputedValueToVPQ(unsigned int vpq_index, uint64_t computed_value) {
+    vpq_queue[vpq_index].computed_value = computed_value;
 }
 
 //-------------------------------------------------------------------

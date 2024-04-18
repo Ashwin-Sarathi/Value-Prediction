@@ -50,14 +50,15 @@ class svp_vpq {
         uint64_t extractTag(uint64_t pc); 
 
         // VPQ Operations
-        bool enqueue(uint64_t pc);
+        int enqueue(uint64_t pc);
         bool dequeue(uint64_t pc);
         bool isVPQFull() const;
         bool isVPQEmpty() const;
         bool stallVPQ(uint64_t bundle_inst);
         uint64_t generateVPQEntryPC(uint64_t pc);
         void getTailForCheckpoint(uint64_t &tail, bool &tail_phase_bit);
-        void addComputedValueToVPQ(uint64_t pc, uint64_t computed_value);
+        void addComputedValueToVPQ(unsigned int vpq_index, uint64_t computed_value);
+        void rollBackVPU();
 
         // Additional functions to support value prediction in the pipeline
         bool getConfidentPrediction(uint64_t pc, uint64_t& predicted_value);

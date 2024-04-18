@@ -289,6 +289,26 @@ void pipeline_t::load_replay() {
          IQ.wakeup(PAY.buf[index].C_phys_reg);
          REN->set_ready(PAY.buf[index].C_phys_reg);
          REN->write(PAY.buf[index].C_phys_reg, PAY.buf[index].C_value.dw);
+         
+         // Replayed loads do not make it to the writeback stage. So in case of prediction, the 
+         // value comparison must be done here itself. The correct value must also be deposited 
+         // in the VPQ over here.
+         if (VALUE_PREDICTION_ENABLED && PAY.buf[index].predict_flag) {
+            assert(PAY.buf[index].vp_eligible && PAY.buf[index].vpq_flag);
+
+            if (PERFECT_VALUE_PREDICTION || oracle_confidence) {
+               // Asserts that in the case of perfect value prediction or oracle prediction, the prediction is always correct
+               assert(PAY.buf[index].C_value.dw = PAY.buf[index].predicted_value);
+            }
+
+            if (!VPU.comparePredictedAndComputed(PAY.buf[index].C_value.dw, PAY.buf[index].predicted_value)) {
+               // Sets the value mispredict flag in the AL in case the prediction is incorrect
+               REN->set_value_misprediction(PAY.buf[index].AL_index);
+            }
+
+            // Adds the computed value to the VPQ entry field of the VPQ structure
+            VPU.addComputedValueToVPQ(PAY.buf[index].vpq_index, PAY.buf[index].C_value.dw);
+         }
 
          //********************************************
          // FIX_ME #18a END

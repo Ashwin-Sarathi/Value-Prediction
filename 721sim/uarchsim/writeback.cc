@@ -186,25 +186,28 @@ void pipeline_t::writeback(unsigned int lane_number) {
       // 4. Computed value is pushed into the VPQ
       //////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-      if (PAY.buf[index].predict_flag) {
+      if (VALUE_PREDICTION_ENABLED && PAY.buf[index].predict_flag) {
          // Asserts that if an instruction is predicted, it is also eligible for prediction and that is has a VPQ entry
          assert(PAY.buf[index].vp_eligible && PAY.buf[index].vpq_flag);
+
          if (PERFECT_VALUE_PREDICTION || oracle_confidence) {
             // Asserts that in the case of perfect value prediction or oracle prediction, the prediction is always correct
             assert(PAY.buf[index].C_value.dw = PAY.buf[index].predicted_value);
          }
+
          if (!VPU.comparePredictedAndComputed(PAY.buf[index].C_value.dw, PAY.buf[index].predicted_value)) {
             // Sets the value mispredict flag in the AL in case the prediction is incorrect
             REN->set_value_misprediction(PAY.buf[index].AL_index);
          }
+
          // Adds the computed value to the VPQ entry field of the VPQ structure
-         VPU.addComputedValueToVPQ(PAY.buf[index].pc, PAY.buf[index].C_value.dw);
+         VPU.addComputedValueToVPQ(PAY.buf[index].vpq_index, PAY.buf[index].C_value.dw);
       }
 
-      if (!PAY.buf[index].predict_flag || !VPU.comparePredictedAndComputed(PAY.buf[index].C_value.dw, PAY.buf[index].predicted_value)) {
-         // If the value was not at all predicted or if the prediction was incorrect, it adds writes the computed value into the PRF
-         REN->write(PAY.buf[index].C_phys_reg, PAY.buf[index].C_value.dw);
-      }
+      // if (!PAY.buf[index].predict_flag || !VPU.comparePredictedAndComputed(PAY.buf[index].C_value.dw, PAY.buf[index].predicted_value)) {
+      //    // If the value was not at all predicted or if the prediction was incorrect, it adds writes the computed value into the PRF
+      //    REN->write(PAY.buf[index].C_phys_reg, PAY.buf[index].C_value.dw);
+      // }
 
       //////////////////////////////////////////////////////////////////////////////////////////////////////////
       // FIX_ME #16

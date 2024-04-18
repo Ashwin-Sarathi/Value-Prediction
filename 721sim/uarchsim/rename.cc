@@ -214,7 +214,8 @@ void pipeline_t::rename2() {
             //Only allocate if VPU is not full
             //if vpq_full_policy is 1 and VPU is full, don't allocate
             if(!VPU.isVPQFull() && PAY.buf[index].vp_eligible){
-               VPU.enqueue(PAY.buf[index].pc);
+               // VPQ index obtains the value of the tail and the instruction is enqueued
+               PAY.buf[index].vpq_index = VPU.enqueue(PAY.buf[index].pc);
                PAY.buf[index].vpq_flag = true;
             }
             else {
