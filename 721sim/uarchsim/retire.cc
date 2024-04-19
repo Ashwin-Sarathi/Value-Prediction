@@ -102,45 +102,45 @@ void pipeline_t::retire(size_t &instret)
 
          // Metrics
 
-         if (!PAY.buf[PAY.head].vp_eligible)
-         { // ineligible
-            vpmeas_ineligible++;
-            if (PAY.buf[PAY.head].vp_ineligible_instruction_type)
-            { // ineligible based on instruction type
-               vpmeas_ineligible_type++;
-            }
-            if (PAY.buf[PAY.head].vp_ineligible_vpq_policy)
-            { // VPQ_full_policy=1 and a VPQ entry could not be allocated
-               vpmeas_ineligible_drop++;
-            }
-         }
-         else if (PAY.buf[PAY.head].vp_eligible)
-         { // eligible
-            vpmeas_eligible++;
-            if (PAY.buf[PAY.head].vp_eligible_SVP_miss)
-            { // no prediction available
-               vpmeas_miss++;
-            }
-            if (PAY.buf[PAY.head].vp_eligible_confidence && PAY.buf[PAY.head].vp_eligible_correctness)
-            { // confident and correct
-               vpmeas_conf_corr++;
-            }
-            if (PAY.buf[PAY.head].vp_eligible_confidence && !PAY.buf[PAY.head].vp_eligible_correctness)
-            { // confident and incorrect
-               vpmeas_conf_incorr++;
-            }
-            if (!PAY.buf[PAY.head].vp_eligible_confidence && PAY.buf[PAY.head].vp_eligible_correctness)
-            { // unconfident and correct
-               vpmeas_unconf_corr++;
-            }
-            if (!PAY.buf[PAY.head].vp_eligible_confidence && !PAY.buf[PAY.head].vp_eligible_correctness)
-            { // unconfident and incorrect
-               vpmeas_unconf_incorr++;
-            }
-         }
+         // if (!PAY.buf[PAY.head].vp_eligible)
+         // { // ineligible
+         //    vpmeas_ineligible++;
+         //    if (PAY.buf[PAY.head].vp_ineligible_instruction_type)
+         //    { // ineligible based on instruction type
+         //       vpmeas_ineligible_type++;
+         //    }
+         //    if (PAY.buf[PAY.head].vp_ineligible_vpq_policy)
+         //    { // VPQ_full_policy=1 and a VPQ entry could not be allocated
+         //       vpmeas_ineligible_drop++;
+         //    }
+         // }
+         // else if (PAY.buf[PAY.head].vp_eligible)
+         // { // eligible
+         //    vpmeas_eligible++;
+         //    if (PAY.buf[PAY.head].vp_eligible_SVP_miss)
+         //    { // no prediction available
+         //       vpmeas_miss++;
+         //    }
+         //    if (PAY.buf[PAY.head].vp_eligible_confidence && PAY.buf[PAY.head].vp_eligible_correctness)
+         //    { // confident and correct
+         //       vpmeas_conf_corr++;
+         //    }
+         //    if (PAY.buf[PAY.head].vp_eligible_confidence && !PAY.buf[PAY.head].vp_eligible_correctness)
+         //    { // confident and incorrect
+         //       vpmeas_conf_incorr++;
+         //    }
+         //    if (!PAY.buf[PAY.head].vp_eligible_confidence && PAY.buf[PAY.head].vp_eligible_correctness)
+         //    { // unconfident and correct
+         //       vpmeas_unconf_corr++;
+         //    }
+         //    if (!PAY.buf[PAY.head].vp_eligible_confidence && !PAY.buf[PAY.head].vp_eligible_correctness)
+         //    { // unconfident and incorrect
+         //       vpmeas_unconf_incorr++;
+         //    }
+         // }
 
          // When an instruction that was a allocated a VPQ entry at rename, it calls the train function
-         if (PAY.buf[PAY.head].vpq_flag)
+         if (VALUE_PREDICTION_ENABLED && PAY.buf[PAY.head].vpq_flag)
          {
             uint64_t computed_value_vpq;
             computed_value_vpq = VPU.retComputedValue(PAY.buf[PAY.head].vpq_index);
@@ -185,6 +185,12 @@ void pipeline_t::retire(size_t &instret)
             num_insn++;
             instret++;
             inc_counter(commit_count);
+
+            if(!(num_insn%1000)){
+               VPU.printSVPStatus(); 
+               VPU.printVPQStatus(); 
+            }
+
          }
          if (PAY.buf[PAY.head].split && PAY.buf[PAY.head].upper)
             inc_counter(split_count);
@@ -280,6 +286,13 @@ void pipeline_t::retire(size_t &instret)
 
          // Compare pipeline simulator against functional simulator.
          checker();
+
+         //VPQ handler: walk from head to tail (clear)
+         //SVP instance counters go to 0
+         // Squash all instructions after it.
+         if (VALUE_PREDICTION_ENABLED && !PERFECT_VALUE_PREDICTION) {
+               VPU.fullSquashVPU();
+         }
 
          // Squash the pipeline.
          squash_complete(jump_PC);

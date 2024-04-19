@@ -14,6 +14,14 @@ svp_vpq::svp_vpq(uint64_t svp_index_bits, uint64_t vpq_entries) {
     svp_size = 1ULL << svp_index_bits; // 2^index_bits
     svp_table = new SVPEntry[svp_size];
 
+    for(int i=0; i<svp_size; i++){
+        svp_table[i].tag  = 0; 
+        svp_table[i].last_value = 0; 
+        svp_table[i].stride = 0; 
+        svp_table[i].confidence = 0; 
+        svp_table[i].instance = 0; 
+    }
+
     vpq_size = vpq_entries;
     vpq_head = 0;
     vpq_tail = 0;
@@ -32,10 +40,11 @@ svp_vpq::~svp_vpq() {
 //-------------------------------------------------------------------
 
 void svp_vpq::trainOrReplace(uint64_t pc, uint64_t value) {
+  
     uint64_t index = extractIndex(pc); // Use a method to extract the index based on PC
     uint64_t tag = extractTag(pc); // Use a method to extract the tag based on PC
 
-    if (svp_table[index].tag == tag || svp_table[index].tag == 0) {        //SVP hit or no tag
+    if (svp_table[index].tag == tag) {        //SVP hit or no tag
         // Existing entry, check for stride consistency
         int64_t new_stride = value - svp_table[index].last_value;
         if (svp_table[index].stride == new_stride) {
@@ -46,7 +55,6 @@ void svp_vpq::trainOrReplace(uint64_t pc, uint64_t value) {
             if (svp_table[index].confidence <= svp_replace_stride) {
                 // Only update stride if confidence is less than or equal to the replace_stride threshold
                 svp_table[index].stride = new_stride;
-                //svp_table[index].confidence = (svp_conf_dec == 0) ? 0 : max(svp_table[index].confidence - svp_conf_dec, 0u);
             }
             svp_table[index].confidence = (svp_conf_dec == 0) ? 0 : max(svp_table[index].confidence - svp_conf_dec, 0u);
         }
@@ -65,19 +73,25 @@ void svp_vpq::trainOrReplace(uint64_t pc, uint64_t value) {
         }
     }
 
-    // Incrementing VPQ head pointer
+    //Incrementing VPQ head pointer
     dequeue(pc);
 }
 
 unsigned int svp_vpq::countVPQInstances(uint64_t pc) {
+
     unsigned int count = 0;
     uint64_t temp_vpq_head = vpq_head;
     bool temp_vpq_head_phase_bit = vpq_head_phase_bit;
+
     while (temp_vpq_head != vpq_tail) {
 
-        if (vpq_queue[temp_vpq_head].pc == generateVPQEntryPC(pc)) {
-            count++;
+        if(svp_table[vpq_queue[temp_vpq_head].PCindex].tag == vpq_queue[temp_vpq_head].PCtag){
+             count++;
         }
+
+        // if (vpq_queue[temp_vpq_head].pc == pc) {
+        //     count++;
+        // }
         
         // Move the head pointer
         temp_vpq_head++;
@@ -102,32 +116,31 @@ uint64_t svp_vpq::extractTag(uint64_t pc) {
 }
 
 bool svp_vpq::getPrediction(uint64_t pc, uint64_t& predicted_value) {
-    uint64_t tag = extractTag(pc); // Use a method to extract the tag based on PC
-    for (uint64_t i = 0; i < svp_size; ++i) {
-        if (svp_table[i].tag == tag && svp_table[i].confidence == svp_conf_max) {
-            predicted_value = svp_table[i].last_value + (svp_table[i].stride * svp_table[i].instance);
-            svp_table[i].instance++;            //increment the instance 
-            return true;
-        }
-    }
 
+    uint64_t tag = extractTag(pc); // Use a method to extract the tag based on PC
+    uint64_t index = extractIndex(pc); 
+
+    if (svp_table[index].tag == tag && svp_table[index].confidence == svp_conf_max) {
+            predicted_value = svp_table[index].last_value + (svp_table[index].stride * svp_table[index].instance);
+            svp_table[index].instance++;            //increment the instance 
+            return true;
+    }
     // No SVP hit or if conf != conf_max
     return false;
 }
 
 bool svp_vpq::getOraclePrediction(uint64_t pc, uint64_t& predicted_value, uint64_t debugger_value) {
-    uint64_t tag = extractTag(pc); // Use a method to extract the tag based on PC
 
-    for (uint64_t i = 0; i < svp_size; ++i) {
+    uint64_t tag_temp = extractTag(pc); // Use a method to extract the tag based on PC
+    uint64_t index = extractIndex(pc); 
 
-        if (svp_table[i].tag == tag) {          //Generate a prediction every time we get an SVP hit
-            predicted_value = svp_table[i].last_value + (svp_table[i].stride * svp_table[i].instance);
+        if (svp_table[index].tag == tag_temp) {          //Generate a prediction every time we get an SVP hit
+            predicted_value = svp_table[index].last_value + (svp_table[index].stride * svp_table[index].instance);
             if(predicted_value == debugger_value){
-                svp_table[i].instance++;
+                svp_table[index].instance++;
                 return true;
             }  
         }
-    }
 
     //No SVP hit or wrong prediction 
     return false;
@@ -135,13 +148,11 @@ bool svp_vpq::getOraclePrediction(uint64_t pc, uint64_t& predicted_value, uint64
 
 void svp_vpq::printSVPStatus() {
     fprintf(stdout, "SVP Entries:\n");
-    fprintf(stdout, "Index\tTag\tLast Value\tStride\tConfidence\tInstance\n");
+    fprintf(stdout, "SVP entry #:\ttag(hex)\tconf\tretired_value\tstride\tinstance\n");
     for (uint64_t i = 0; i < svp_size; ++i) {
         const auto& entry = svp_table[i];
-        if (entry.tag != 0 || entry.last_value != 0) {  // Print only initialized entries
-            fprintf(stdout, "%lu\t%lu\t%lu\t%ld\t%u\t%u\n",
-                    i, entry.tag, entry.last_value, entry.stride, entry.confidence, entry.instance);
-        }
+        fprintf(stdout, "%10lu:\t%8lx\t%4u\t%12lu\t%8ld\t%4u\n",
+                i, entry.tag, entry.confidence, entry.last_value, entry.stride, entry.instance);
     }
 }
 
@@ -149,41 +160,38 @@ void svp_vpq::printSVPStatus() {
 // VPQ Operations
 //-------------------------------------------------------------------
 
-uint64_t svp_vpq::generateVPQEntryPC(uint64_t pc) {
-    uint64_t tag = extractTag(pc);
-    uint64_t index = extractIndex(pc);
-    pc = (tag << svp_index_bits) | (index); 
-    return pc;
-}
-
 int svp_vpq::enqueue(uint64_t pc) {
-    // if (isVPQFull()) {
-    //     std::cerr << "ERROR: Attempted to enqueue to a full Value Prediction Queue.\n";
-    //     return false;
-    // }
+
+    //VPQ should not be full at this stage
     assert(!isVPQFull());
+    
+    //Counter to manage VPQ_index 
     unsigned int old_tail = vpq_tail;
 
-    uint64_t vpq_pc = generateVPQEntryPC(pc);
-    vpq_queue[vpq_tail].pc = vpq_pc;
+    //Store PC information 
+    vpq_queue[vpq_tail].pc = pc;
+    vpq_queue[vpq_tail].PCtag = extractTag(pc);
+    vpq_queue[vpq_tail].PCindex = extractIndex(pc);
+
+    //Increment tail pointer 
     vpq_tail++;
     
-    // Handle wrap-around case for the tail pointer
+    //Handle wrap-around case for the tail pointer
     if (vpq_tail == vpq_size) {
         vpq_tail_phase_bit = !vpq_tail_phase_bit;
         vpq_tail = 0;
     }
+
+    //return VPQ_index for this instruction 
     return old_tail;
 }
 
 bool svp_vpq::dequeue(uint64_t pc) {
-    // if (isVPQEmpty()) {
-    //     std::cerr << "ERROR: Attempted to dequeue from an empty Value Prediction Queue.\n";
-    //     return false;
-    // }
+
+    //VPQ should not be full at this stage
     assert(!isVPQEmpty());
 
-    // pc = vpq_queue[vpq_head].pc;
+    //Increment head 
     vpq_head++;
     
     // Handle wrap-around case for the head pointer
@@ -254,12 +262,12 @@ void svp_vpq::printVPQStatus() {
     fprintf(stdout, "\n");
 
     fprintf(stdout, "VPQ Entries:\n");
-    fprintf(stdout, "Index\tPC\tComputed Value\n");
+    fprintf(stdout, "VPQ entry #:\tPC(hex)\tPCtag(hex)\tPCindex(hex)\tComputed Value\n");
 
     unsigned int i = vpq_head;
     while (true) {
         const auto& entry = vpq_queue[i];
-        fprintf(stdout, "%u\t%lu\t%lu\n", i, entry.pc, entry.computed_value);
+        fprintf(stdout, "%u\t%lx\t%lx\t%lx\t%lu\n", i, entry.pc, entry.PCtag, entry.PCindex, entry.computed_value);
 
         if (i == vpq_tail) {
             break; 
@@ -270,6 +278,17 @@ void svp_vpq::printVPQStatus() {
         if (i == vpq_head) {
             break; 
         }
+    }
+}
+
+void svp_vpq::fullSquashVPU() {
+    // For a full rollback of VPQ, the VPQ tail is set to the VPQ head
+    vpq_tail = vpq_head;
+    vpq_tail_phase_bit = vpq_head_phase_bit;
+
+    // The SVP is scanned and all instances are set to 0
+    for (uint64_t i = 0; i < svp_size; ++i) {
+        svp_table[i].instance = 0;
     }
 }
 
@@ -284,6 +303,7 @@ bool svp_vpq::getConfidentPrediction(uint64_t pc, uint64_t& predicted_value) {
 
 bool svp_vpq::isEligible(uint64_t pc, bool is_branch, bool destination_register, fu_type instruction_type, bool load) {
     uint64_t tag = extractTag(pc); // Use a method to extract the tag based on PC
+    
     //check for destination register
     if(!destination_register){
         return false; 
@@ -295,23 +315,23 @@ bool svp_vpq::isEligible(uint64_t pc, bool is_branch, bool destination_register,
         return false;
     }
 
-    //if dont predict integer ALU instructions
-    //check for  function unit for simple integer ALU operations &  function unit for complex integer ALU operations (check fu.h)  --> these are set in the payload at decode 
-    if(!svp_predict_int_alu && (instruction_type == FU_ALU_S || instruction_type == FU_ALU_C)) {            
-        return false;
-    }
+    // //if dont predict integer ALU instructions
+    // //check for  function unit for simple integer ALU operations &  function unit for complex integer ALU operations (check fu.h)  --> these are set in the payload at decode 
+    // if(!svp_predict_int_alu && (instruction_type == FU_ALU_S || instruction_type == FU_ALU_C)) {            
+    //     return false;
+    // }
 
-    //if dont predict iflt.pt. ALU instructions
-    //check for function unit for floating-point ALU operations (check fu.h) --> these are set in the payload at decode 
-    if (!svp_predict_fp_alu && instruction_type == FU_ALU_FP) {
-        return false;
-    }
+    // //if dont predict iflt.pt. ALU instructions
+    // //check for function unit for floating-point ALU operations (check fu.h) --> these are set in the payload at decode 
+    // if (!svp_predict_fp_alu && instruction_type == FU_ALU_FP) {
+    //     return false;
+    // }
 
-    //if dont predict load instructions
-    //check for is_load  (check pipeline.h) --> takes the payload flags as the argument 
-    if (!svp_predict_load && load) {
-        return false;
-    }
+    // //if dont predict load instructions
+    // //check for is_load  (check pipeline.h) --> takes the payload flags as the argument 
+    // if (!svp_predict_load && load) {
+    //     return false;
+    // }
     return true;
 }
 

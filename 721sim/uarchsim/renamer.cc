@@ -549,27 +549,32 @@ renamer:: renamer(uint64_t n_log_regs, uint64_t n_phys_regs, uint64_t n_branches
 
     void renamer::printFL(){
         fprintf(stdout, "FL State:\n");
+        fprintf(stdout, "FreeList size: %u\n", freelist.size);
         fprintf(stdout, "Head: %u (Phase Bit: %d)\n", freelist.head, freelist.head_phase_bit);
         fprintf(stdout, "Tail: %u (Phase Bit: %d)\n", freelist.tail, freelist.tail_phase_bit);
         fprintf(stdout, "\n");
 
         fprintf(stdout, "FL Entries:\n");
-        fprintf(stdout, "Index\tPC\tComputed Value\n");
+        fprintf(stdout, "List\n");
 
-        unsigned int i = freelist.head;
-        while (true) {
-            const auto& entry = freelist.list[i];
+        // unsigned int i = freelist.head;
+        // while (true) {
+        //     const auto& entry = freelist.list[i];
+        //     fprintf(stdout, "%u\n", freelist.list[i]);
+
+        //     if (i == freelist.tail) {
+        //         break; 
+        //     }
+
+        //     i = (i + 1) % freelist.size;
+
+        //     if (i == freelist.head) {
+        //         break; 
+        //     }
+        // }
+
+        for(int i = 0; i < freelist.size; i++){
             fprintf(stdout, "%u\n", freelist.list[i]);
-
-            if (i == freelist.tail) {
-                break; 
-            }
-
-            i = (i + 1) % freelist.size;
-
-            if (i == freelist.head) {
-                break; 
-            }
         }
     }
 
