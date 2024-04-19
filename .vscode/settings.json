@@ -1,7 +1,8 @@
 {
     "files.associations": {
         "*.tcc": "cpp",
-        "string": "cpp"
+        "string": "cpp",
+        "iostream": "cpp"
     },
     "cmake.sourceDirectory": "/mnt/ncsudrive/a/asarath/721/Value-Prediction/721sim"
 }

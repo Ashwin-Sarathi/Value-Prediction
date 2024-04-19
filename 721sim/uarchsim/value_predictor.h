@@ -22,6 +22,8 @@ struct SVPEntry {
 /////////////////////////////////////////////////////////////////////
 struct VPQEntry {
     uint64_t pc;              // Program Counter associated with this prediction
+    uint64_t PCtag; 
+    uint64_t PCindex; 
     uint64_t computed_value;  // Computed value for prediction
 };
 

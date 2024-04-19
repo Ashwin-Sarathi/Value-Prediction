@@ -14,6 +14,14 @@ svp_vpq::svp_vpq(uint64_t svp_index_bits, uint64_t vpq_entries) {
     svp_size = 1ULL << svp_index_bits; // 2^index_bits
     svp_table = new SVPEntry[svp_size];
 
+    for(int i=0; i<svp_size; i++){
+        svp_table[i].tag  = 0; 
+        svp_table[i].last_value = 0; 
+        svp_table[i].stride = 0; 
+        svp_table[i].confidence = 0; 
+        svp_table[i].instance = 0; 
+    }
+
     vpq_size = vpq_entries;
     vpq_head = 0;
     vpq_tail = 0;
@@ -31,7 +39,7 @@ svp_vpq::~svp_vpq() {
 // SVP Operations
 //-------------------------------------------------------------------
 
-void svp_vpq::trainOrReplace(uint64_t pc, uint64_t value) {
+void svp_vpq::trainOrReplace(uint64_t pc, uint64_t value) {  
     uint64_t index = extractIndex(pc); // Use a method to extract the index based on PC
     uint64_t tag = extractTag(pc); // Use a method to extract the tag based on PC
 
@@ -46,7 +54,6 @@ void svp_vpq::trainOrReplace(uint64_t pc, uint64_t value) {
             if (svp_table[index].confidence <= svp_replace_stride) {
                 // Only update stride if confidence is less than or equal to the replace_stride threshold
                 svp_table[index].stride = new_stride;
-                //svp_table[index].confidence = (svp_conf_dec == 0) ? 0 : max(svp_table[index].confidence - svp_conf_dec, 0u);
             }
             svp_table[index].confidence = (svp_conf_dec == 0) ? 0 : max(svp_table[index].confidence - svp_conf_dec, 0u);
         }
@@ -61,11 +68,11 @@ void svp_vpq::trainOrReplace(uint64_t pc, uint64_t value) {
             svp_table[index].stride = value;
             svp_table[index].last_value = value;
             svp_table[index].confidence = 0; 
-            svp_table[index].instance = countVPQInstances(pc);
+            svp_table[index].instance = countVPQInstances(pc) - 1;
         }
     }
 
-    // Incrementing VPQ head pointer
+    //Incrementing VPQ head pointer
     dequeue(pc);
 }
 
@@ -75,7 +82,7 @@ unsigned int svp_vpq::countVPQInstances(uint64_t pc) {
     bool temp_vpq_head_phase_bit = vpq_head_phase_bit;
     while (temp_vpq_head != vpq_tail) {
 
-        if (vpq_queue[temp_vpq_head].pc == generateVPQEntryPC(pc)) {
+        if (vpq_queue[temp_vpq_head].pc == pc) {
             count++;
         }
         
@@ -103,13 +110,11 @@ uint64_t svp_vpq::extractTag(uint64_t pc) {
 
 void svp_vpq::printSVPStatus() {
     fprintf(stdout, "SVP Entries:\n");
-    fprintf(stdout, "Index\tTag\tLast Value\tStride\tConfidence\tInstance\n");
+    fprintf(stdout, "SVP entry #:\ttag(hex)\tconf\tretired_value\tstride\tinstance\n");
     for (uint64_t i = 0; i < svp_size; ++i) {
         const auto& entry = svp_table[i];
-        if (entry.tag != 0 || entry.last_value != 0) {  // Print only initialized entries
-            fprintf(stdout, "%lu\t%lu\t%lu\t%ld\t%u\t%u\n",
-                    i, entry.tag, entry.last_value, entry.stride, entry.confidence, entry.instance);
-        }
+        fprintf(stdout, "%10lu:\t%8lx\t%4u\t%12lu\t%8ld\t%4u\n",
+                i, entry.tag, entry.confidence, entry.last_value, entry.stride, entry.instance);
     }
 }
 
@@ -125,18 +130,28 @@ uint64_t svp_vpq::generateVPQEntryPC(uint64_t pc) {
 }
 
 int svp_vpq::enqueue(uint64_t pc) {
+
+    //VPQ should not be full at this stage
     assert(!isVPQFull());
+    
+    //Counter to manage VPQ_index 
     unsigned int old_tail = vpq_tail;
 
-    uint64_t vpq_pc = generateVPQEntryPC(pc);
-    vpq_queue[vpq_tail].pc = vpq_pc;
+    //Store PC information 
+    vpq_queue[vpq_tail].pc = pc;
+    vpq_queue[vpq_tail].PCtag = extractTag(pc);
+    vpq_queue[vpq_tail].PCindex = extractIndex(pc);
+
+    //Increment tail pointer 
     vpq_tail++;
     
-    // Handle wrap-around case for the tail pointer
+    //Handle wrap-around case for the tail pointer
     if (vpq_tail == vpq_size) {
         vpq_tail_phase_bit = !vpq_tail_phase_bit;
         vpq_tail = 0;
     }
+
+    //return VPQ_index for this instruction 
     return old_tail;
 }
 
@@ -218,12 +233,12 @@ void svp_vpq::printVPQStatus() {
     fprintf(stdout, "\n");
 
     fprintf(stdout, "VPQ Entries:\n");
-    fprintf(stdout, "Index\tPC\tComputed Value\n");
+    fprintf(stdout, "VPQ entry #:\tPC(hex)\tPCtag(hex)\tPCindex(hex)\tComputed Value\n");
 
     unsigned int i = vpq_head;
     while (true) {
         const auto& entry = vpq_queue[i];
-        fprintf(stdout, "%u\t%lu\t%lu\n", i, entry.pc, entry.computed_value);
+        fprintf(stdout, "%u\t%lx\t%lx\t%lx\t%lu\n", i, entry.pc, entry.PCtag, entry.PCindex, entry.computed_value);
 
         if (i == vpq_tail) {
             break; 

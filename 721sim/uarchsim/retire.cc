@@ -2,12 +2,16 @@
 #include "trap.h"
 #include "mmu.h"
 
+#include <iostream>
+using namespace std;
+
 //fixed
 
 void pipeline_t::retire(size_t& instret) {
    bool head_valid;
    bool completed, exception, load_viol, br_misp, val_misp, load, store, branch, amo, csr;
    reg_t offending_PC;
+   int test_counter = 0;
 
    bool amo_success;
    trap_t *trap = NULL; // Supress uninitialized warning.
@@ -125,11 +129,14 @@ void pipeline_t::retire(size_t& instret) {
                vpmeas_unconf_incorr ++;
             }
          }
-
-         if (VALUE_PREDICTION_ENABLED && !PERFECT_VALUE_PREDICTION && PAY.buf[PAY.head].vp_confident) {
+         
+         // cout << "RETIRE CALLED" << endl;
+         if (VALUE_PREDICTION_ENABLED && !PERFECT_VALUE_PREDICTION && (PAY.buf[PAY.head].vp_eligible || PAY.buf[PAY.head].vp_miss)) {
+            // assert(PAY.buf[PAY.head].vp_eligible);
             uint64_t computed_value_vpq;
             computed_value_vpq = VPU.getComputedValue(PAY.buf[PAY.head].vpq_index);
             VPU.trainOrReplace(PAY.buf[PAY.head].pc, computed_value_vpq);
+            // cout << "DEQUEUED: " << test_counter << endl;
          }
 
          REN->commit(); 
@@ -166,6 +173,11 @@ void pipeline_t::retire(size_t& instret) {
 	    num_insn++;
             instret++;
 	    inc_counter(commit_count);
+
+         if(!(num_insn%1000)){
+            VPU.printSVPStatus(); 
+            VPU.printVPQStatus(); 
+         }
 	 }
 	 if (PAY.buf[PAY.head].split && PAY.buf[PAY.head].upper)
 	    inc_counter(split_count);

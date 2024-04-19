@@ -192,10 +192,28 @@ void pipeline_t::writeback(unsigned int lane_number) {
       // 3. Computed value is pushed into the VPQ
       //////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-      if (VALUE_PREDICTION_ENABLED && !PERFECT_VALUE_PREDICTION && !oracle_confidence && PAY.buf[index].vp_confident) {
-         if (!VPU.comparePredictedAndComputed(PAY.buf[index].C_value.dw, PAY.buf[index].predicted_value)) {
-            // Sets the value mispredict flag in the AL in case the prediction is incorrect
-            REN->set_value_misprediction(PAY.buf[index].AL_index);
+      if (VALUE_PREDICTION_ENABLED && !PERFECT_VALUE_PREDICTION && !oracle_confidence && PAY.buf[index].vp_eligible) {
+         // If an instruction is eligible, it should have generated a prediction
+         assert(PAY.buf[index].vp_confident || PAY.buf[index].vp_unconfident);
+
+         // Only in the case of confident values, they are written into the PRF
+         if (!VPU.comparePredictedAndComputed(PAY.buf[index].predicted_value, PAY.buf[index].C_value.dw)) {
+            if (PAY.buf[index].vp_confident) {
+               // Sets the value mispredict flag in the AL in case the prediction is incorrect
+               REN->set_value_misprediction(PAY.buf[index].AL_index);
+               PAY.buf[index].vp_incorrect = true;
+               assert(!PAY.buf[index].vp_correct);
+               assert(!PAY.buf[index].vp_unconfident);
+            }
+            else {
+               PAY.buf[index].vp_incorrect = true;
+               assert(!PAY.buf[index].vp_correct);
+               assert(PAY.buf[index].vp_unconfident);
+            }
+         }
+         else {
+            PAY.buf[index].vp_correct = true;
+            assert(!PAY.buf[index].vp_incorrect);
          }
 
          // Adds the computed value to the VPQ entry field of the VPQ structure

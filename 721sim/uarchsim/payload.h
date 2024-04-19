@@ -144,6 +144,8 @@ typedef struct {
 
    uint64_t predicted_value;                  // If confident, prediction is available
 
+   bool in_vpq;
+
    // Flags valuable for measuring VPU metrics in retirement
    bool vp_eligible;                          // Eligible for value prediction.
    bool vp_ineligible_type;                   // an instruction may be ineligible based on instruction type
