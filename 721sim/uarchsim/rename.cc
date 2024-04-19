@@ -53,6 +53,7 @@ void pipeline_t::rename2() {
    unsigned int index;
    unsigned int bundle_dst, bundle_branch, bundle_VPQ;
    bool not_enough_vpq;
+   
 
    // Stall the rename2 sub-stage if either:
    // (1) There isn't a current rename bundle.
@@ -163,6 +164,8 @@ void pipeline_t::rename2() {
    // Sufficient resources are available to rename the rename bundle.
    //
    for (i = 0; i < dispatch_width; i++) {
+      PAY.buf[i].oracle = false;
+
       if (!RENAME2[i].valid)
          break;			// Not a valid instruction: Reached the end of the rename bundle so exit loop.
 
@@ -232,13 +235,15 @@ void pipeline_t::rename2() {
                   if(VPU.getOracleConfidentPrediction(PAY.buf[index].pc, predicted_value, actual_value->a_rdst[0].value)){
                      PAY.buf[index].predicted_value = predicted_value;
                      PAY.buf[index].predict_flag = true; 
+                     PAY.buf[index].oracle = true;
                   }
                   else{
                      PAY.buf[index].predict_flag = false; 
                   }
             }
 
-            //Real confidence: check for a confident prediction for the logical destination register & 
+            // Real confidence: check for a confident prediction for the logical destination register & 
+            
             if ((VPU.getConfidentPrediction(PAY.buf[index].pc, predicted_value)) && !oracle_confidence && PAY.buf[index].vp_eligible && PAY.buf[index].vpq_flag) {
                // A confident prediction is available
                //Instance is incremented within get_confident_prediction

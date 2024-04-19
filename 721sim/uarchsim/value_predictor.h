@@ -23,6 +23,8 @@ struct SVPEntry {
 /////////////////////////////////////////////////////////////////////
 struct VPQEntry {
     uint64_t pc;              // Program Counter associated with this prediction
+    uint64_t PCtag; 
+    uint64_t PCindex; 
     uint64_t computed_value;  // Computed value for prediction
 };
 
@@ -63,7 +65,10 @@ class svp_vpq {
         void addComputedValueToVPQ(unsigned int vpq_index, uint64_t computed_value);
         void rollBackVPU();
         uint64_t retComputedValue(uint64_t pc);
-        void printVPQStatus();  
+        void printVPQStatus();
+        void fullSquashVPU();
+        void partialRollbackVPU(uint64_t checkpointed_tail, bool checkpointed_tail_phase_bit);
+
 
         // Additional functions to support value prediction in the pipeline
         bool getConfidentPrediction(uint64_t pc, uint64_t& predicted_value);

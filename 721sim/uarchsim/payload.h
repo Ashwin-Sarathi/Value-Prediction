@@ -168,6 +168,9 @@ typedef struct {
    bool vp_eligible_correctness; 
 
 
+   bool oracle; 
+
+
    // ** SOURCE ** register D.
    // Floating-point multiply-accumulate uses a third source register.
    bool D_valid;                // If 'true', the instruction has a
