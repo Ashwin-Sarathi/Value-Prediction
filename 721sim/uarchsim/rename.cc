@@ -74,11 +74,12 @@ void pipeline_t::rename2() {
 
       index = RENAME2[i].index;
 
-      PAY.buf[index].vp_ineligible        = false;
+      // Setting all value prediction related flags to false
+      PAY.buf[index].vp_eligible          = false;
+      
       PAY.buf[index].vp_ineligible_type   = false;
       PAY.buf[index].vp_ineligible_drop   = false;
 
-      PAY.buf[index].vp_eligible          = false;
       PAY.buf[index].vp_miss              = false;
       PAY.buf[index].vp_confident         = false;
       PAY.buf[index].vp_unconfident       = false;
@@ -188,7 +189,7 @@ void pipeline_t::rename2() {
          return;
    }
 
-   if (VALUE_PREDICTION_ENABLED) {
+   if (VALUE_PREDICTION_ENABLED && !PERFECT_VALUE_PREDICTION) {
       not_enough_vpq = VPU.stallVPQ(bundle_VPQ);
       if(not_enough_vpq && !vpq_full_policy) {
          return;
@@ -287,32 +288,40 @@ void pipeline_t::rename2() {
 
          // When in oracle mode, prediction is fed only if is correct, else it is always unconfident and incorrect
          if (oracle_confidence) {            
-               actual_value = get_pipe()->peek(PAY.buf[index].db_index);
-               int prediction_result = VPU.getOraclePrediction(PAY.buf[index].pc, predicted_value, actual_value->a_rdst[0].value);
+            actual_value = get_pipe()->peek(PAY.buf[index].db_index);
+            int prediction_result = VPU.getOraclePrediction(PAY.buf[index].pc, predicted_value, actual_value->a_rdst[0].value);
 
-               // Tag match but value mismatch
-               if(prediction_result == 1){
-                  PAY.buf[index].predicted_value = predicted_value;
-                  PAY.buf[index].vp_unconfident = true; 
-                  PAY.buf[index].vp_incorrect = true;
-               }
+            // Tag match but value mismatch
+            if(prediction_result == 1){
+               PAY.buf[index].vp_unconfident = true; 
+               PAY.buf[index].vp_incorrect = true;
+               assert(!PAY.buf[index].vp_confident);
+               assert(!PAY.buf[index].vp_correct);
+            }
 
-               // Tag match and value match case
-               else if (prediction_result == 2) {
-                  PAY.buf[index].predicted_value = predicted_value;
-                  PAY.buf[index].vp_confident = true; 
-                  PAY.buf[index].vp_correct = true;
-               }
+            // Tag match and value match case
+            else if (prediction_result == 2) {
+               PAY.buf[index].predicted_value = predicted_value;
+               PAY.buf[index].vp_confident = true; 
+               PAY.buf[index].vp_correct = true;
+               assert(!PAY.buf[index].vp_unconfident);
+               assert(!PAY.buf[index].vp_incorrect);
+            }
 
-               // Tag not found
-               else if (prediction_result == 0) {
-                  PAY.buf[index].vp_miss = true;
-               }
+            // Tag not found
+            else if (prediction_result == 0) {
+               PAY.buf[index].vp_eligible = false;
+               PAY.buf[index].vp_miss = true;
+               assert(!PAY.buf[index].vp_unconfident);
+               assert(!PAY.buf[index].vp_confident);
+               assert(!PAY.buf[index].vp_incorrect);
+               assert(!PAY.buf[index].vp_correct);
+            }
 
-               // This case is not possible
-               else {
-                  assert(1);
-               }
+            // This case is not possible
+            else {
+               assert(1);
+            }
          }
 
          // When in real confidence mode, prediction is fed regardless and is checked later for correctness
@@ -333,7 +342,10 @@ void pipeline_t::rename2() {
 
             // Tag not found
             else if (prediction_result == 0) {
+               PAY.buf[index].vp_eligible = false;
                PAY.buf[index].vp_miss = true;
+               assert(!PAY.buf[index].vp_unconfident);
+               assert(!PAY.buf[index].vp_confident);
             }
 
             // This case is not possible

@@ -1,6 +1,6 @@
 Instructions to build the 721sim executable:
     1. cd 721/Value-Prediction/build
-    2. cmake -DCMAKE_BUILD_TYPE=RelO3 ../721sim
+    2. cmake -DCMAKE_BUILD_TYPE=RelO3 ../721sim / cmake -DCMAKE_BUILD_TYPE=debug ../721sim
     3. make -j$(nproc) 
 The executable will be located at the path: 721/P4/Value-Prediction/uarchsim/721sim
 Can do ./uarchsim/721sim -h for help

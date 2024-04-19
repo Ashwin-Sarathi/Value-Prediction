@@ -88,9 +88,6 @@ void pipeline_t::retire(size_t& instret) {
          //********************************************
 
          // Recording vpmeas
-         if (PAY.buf[PAY.head].vp_ineligible) {
-            vpmeas_ineligible ++;
-         }
 
          if (PAY.buf[PAY.head].vp_ineligible_type) {
             vpmeas_ineligible_type ++;
@@ -102,6 +99,9 @@ void pipeline_t::retire(size_t& instret) {
 
          if (PAY.buf[PAY.head].vp_eligible) {
             vpmeas_eligible ++;
+         } 
+         else {
+            vpmeas_ineligible ++;
          }
 
          if (PAY.buf[PAY.head].vp_miss) {

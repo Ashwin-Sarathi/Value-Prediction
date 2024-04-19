@@ -205,31 +205,26 @@ void pipeline_t::dispatch() {
       // FIX_ME #8 END
       //********************************************
 
-      // If the instruction is value predicted, prediction must be fed in this stage
-      // As long as the mode is perfect value prediction, the instruction is good, it is not a branch and it has a valid destination, 
-      // it is predicted.
-      // For perfect value prediction, we grab this value from the functional simulator and feed it to the destination physical register.
-      // PAY.buf[index].predict_flag = false;
-      if (VALUE_PREDICTION_ENABLED && PERFECT_VALUE_PREDICTION && PAY.buf[index].good_instruction && !PAY.buf[index].checkpoint && PAY.buf[index].C_valid) {
-         PAY.buf[index].vp_confident = true;
-         PAY.buf[index].vp_correct = true;
-         PAY.buf[index].vp_eligible = true;
-         actual = get_pipe()->peek(PAY.buf[index].db_index);
-         PAY.buf[index].predicted_value = actual->a_rdst[0].value;
-         REN->write(PAY.buf[index].C_phys_reg, PAY.buf[index].predicted_value);
-      }
+      /////////////////////////////////////////////////////////////////////////////////////////// 
+      // SETTING UP PERFECT VALUE PREDICTION
+      // 1. Assert that all flags are false as set in rename stage. This ensures that
+      //    flag changing happens only during real value prediction modes.
+      // 2. Check if base conditions for value prediction are met and set eligibility flag.
+      // 3. Peek into debugger and get correct value.
+      // 4. Set confident and correct flag to true.
+      ///////////////////////////////////////////////////////////////////////////////////////////  
 
       if (VALUE_PREDICTION_ENABLED && PERFECT_VALUE_PREDICTION) {
-         if (!(PAY.buf[index].good_instruction && !PAY.buf[index].checkpoint && PAY.buf[index].C_valid)) {
-            PAY.buf[index].vp_ineligible = true;
+         assert(!PAY.buf[index].vp_eligible && !PAY.buf[index].vp_ineligible_type && !PAY.buf[index].vp_ineligible_drop && !PAY.buf[index].vp_miss && !PAY.buf[index].vp_confident && !PAY.buf[index].vp_unconfident && !PAY.buf[index].vp_correct);
+         if (PAY.buf[index].good_instruction && !PAY.buf[index].checkpoint && PAY.buf[index].C_valid) {
+            PAY.buf[index].vp_eligible = true;
+            actual = get_pipe()->peek(PAY.buf[index].db_index);
+            PAY.buf[index].predicted_value = actual->a_rdst[0].value;
+            PAY.buf[index].vp_confident = true;
+            PAY.buf[index].vp_correct = true;
+         }
+         else {
             PAY.buf[index].vp_ineligible_type = true;
-            PAY.buf[index].vp_ineligible_drop= false;
-            PAY.buf[index].vp_eligible = false;
-            PAY.buf[index].vp_miss = false;
-            PAY.buf[index].vp_confident = false;
-            PAY.buf[index].vp_unconfident = false;
-            PAY.buf[index].vp_correct = false;
-            PAY.buf[index].vp_incorrect = false;
          }
       }
 
@@ -254,7 +249,7 @@ void pipeline_t::dispatch() {
       //Check if valid
       // Sets ready bit of PRF if the destination register is confidently value predicted
       // Clears the ready bit of PRF if the destination is not value predicted.
-      if(PAY.buf[index].C_valid){
+      if(PAY.buf[index].C_valid) {
          if (PAY.buf[index].vp_confident) {
             // If predicted, prediction must be written into PRF and PRF ready bit must be set
             REN->write(PAY.buf[index].C_phys_reg, PAY.buf[index].predicted_value);

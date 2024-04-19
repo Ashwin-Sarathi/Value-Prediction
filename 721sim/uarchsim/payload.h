@@ -146,7 +146,6 @@ typedef struct {
 
    // Flags valuable for measuring VPU metrics in retirement
    bool vp_eligible;                          // Eligible for value prediction.
-   bool vp_ineligible;                        // Not eligible for value prediction.
    bool vp_ineligible_type;                   // an instruction may be ineligible based on instruction type
    bool vp_ineligible_drop;                   // Ineligible because VPQ_full_policy=1 and a VPQ entry could not be allocated at prediction time
    bool vp_miss;                              // VPU was unable to generate a value prediction (e.g., SVP miss).
