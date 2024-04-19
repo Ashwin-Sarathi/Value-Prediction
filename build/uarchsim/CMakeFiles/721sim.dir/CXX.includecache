@@ -211,8 +211,6 @@ value_predictor.h
 /mnt/ncsudrive/a/asarath/721/Value-Prediction/721sim/uarchsim/rename.cc
 pipeline.h
 /mnt/ncsudrive/a/asarath/721/Value-Prediction/721sim/uarchsim/pipeline.h
-stdio.h
--
 
 /mnt/ncsudrive/a/asarath/721/Value-Prediction/721sim/uarchsim/renamer.h
 inttypes.h

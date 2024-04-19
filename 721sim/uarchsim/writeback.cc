@@ -143,7 +143,7 @@ void pipeline_t::writeback(unsigned int lane_number) {
             //********************************************
 
             // Restore VPQ and SVP
-            if (VALUE_PREDICTION_ENABLED && PAY.buf[index].vpq_flag) {
+            if (VALUE_PREDICTION_ENABLED && PAY.buf[index].vp_eligible) {
                uint64_t checkpointed_vpq_tail;
                bool checkpointed_vpq_tail_phase_bit;
                REN->get_vpq_Checkpoints(PAY.buf[index].branch_ID, checkpointed_vpq_tail, checkpointed_vpq_tail_phase_bit);
@@ -184,20 +184,15 @@ void pipeline_t::writeback(unsigned int lane_number) {
       //////////////////////////////////////////////////////////////////////////////////////////////////////////
       // Compare predicted value from the SVP to the computed value in case a prediction has been made
       // 1. In case of perfect prediction or oracle prediction, it is impossible for the prediction to be 
-      //    wrong so this comparison can be asserted to be correct.
+      //    wrong so this comparison can be asserted to be correct. So we don't bother checking for these cases.
       // 2. In case of real prediction, the comparison has to be done and if:
       //    a. Values match - Do nothing
       //    b. Values do not match - Post value misprediction in AL entry
       //    c. Optionally can also initiate immediate recovery in case we are implementing VR-3, VR-4 or VR-5
-      // 3. If destination register was not value predicted, or if the prediction is incorrect, we have to
-      //    write the computed value into the PRF
-      // 4. Computed value is pushed into the VPQ
+      // 3. Computed value is pushed into the VPQ
       //////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-      if (VALUE_PREDICTION_ENABLED && PAY.buf[index].predict_flag) {
-         // Asserts that if an instruction is predicted, it is also eligible for prediction and that is has a VPQ entry
-         // assert(PAY.buf[index].vp_eligible && PAY.buf[index].vpq_flag);
-
+      if (VALUE_PREDICTION_ENABLED && !PERFECT_VALUE_PREDICTION && !oracle_confidence && PAY.buf[index].vp_confident) {
          if (!VPU.comparePredictedAndComputed(PAY.buf[index].C_value.dw, PAY.buf[index].predicted_value)) {
             // Sets the value mispredict flag in the AL in case the prediction is incorrect
             REN->set_value_misprediction(PAY.buf[index].AL_index);
@@ -206,11 +201,6 @@ void pipeline_t::writeback(unsigned int lane_number) {
          // Adds the computed value to the VPQ entry field of the VPQ structure
          VPU.addComputedValueToVPQ(PAY.buf[index].vpq_index, PAY.buf[index].C_value.dw);
       }
-
-      // if (!PAY.buf[index].predict_flag || !VPU.comparePredictedAndComputed(PAY.buf[index].C_value.dw, PAY.buf[index].predicted_value)) {
-      //    // If the value was not at all predicted or if the prediction was incorrect, it adds writes the computed value into the PRF
-      //    REN->write(PAY.buf[index].C_phys_reg, PAY.buf[index].C_value.dw);
-      // }
 
       //////////////////////////////////////////////////////////////////////////////////////////////////////////
       // FIX_ME #16

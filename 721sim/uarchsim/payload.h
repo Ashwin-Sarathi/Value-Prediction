@@ -137,31 +137,23 @@ typedef struct {
                                 // destination register.
 
    //************************************************
-   //ADD predicted value to the destination register
+   // Flags related to value prediction
    //************************************************ 
 
-   bool vpq_flag;                // Indicates if the instruction is present in the VPQ
+   unsigned int vpq_index;                    // Specifies the instructions index in the VPQ
 
-   bool predict_flag;            // Indicates if the value is being predicted by VP unit
+   uint64_t predicted_value;                  // If confident, prediction is available
 
-   unsigned int vpq_index;                // Specifies the instructions index in the VPQ
-
-   uint64_t predicted_value;     // If confident, prediction is available
-
-   ////////////////////////////////////////////
-   // Flags to update metric counters in retire 
-   /////////////////////////////////////////////
-
-   bool vp_eligible;                          // Indicates if the instruction is eligible for value prediction
-   bool vp_ineligible_instruction_type;       // an instruction may be ineligible based on instruction type
-   bool vp_ineligible_vpq_policy;             // ineligible because VPQ_full_policy=1 and a VPQ entry could not be allocated at prediction time
-
-   bool vp_eligible_SVP_miss;                 // “no prediction available” the instruction missed in the SVP table
-
-   //    Correct/incorrect is an indication of whether the value prediction was correct or incorrect, regardless of whether or not it was used (i.e., regardless of confidence). 
-   // Confident/unconfident is an indication of confidence, hence, whether or not the value prediction was used.
-   bool vp_eligible_confidence;              
-   bool vp_eligible_correctness;
+   // Flags valuable for measuring VPU metrics in retirement
+   bool vp_eligible;                          // Eligible for value prediction.
+   bool vp_ineligible;                        // Not eligible for value prediction.
+   bool vp_ineligible_type;                   // an instruction may be ineligible based on instruction type
+   bool vp_ineligible_drop;                   // Ineligible because VPQ_full_policy=1 and a VPQ entry could not be allocated at prediction time
+   bool vp_miss;                              // VPU was unable to generate a value prediction (e.g., SVP miss).
+   bool vp_confident;                         // VPU generated a confident prediction
+   bool vp_unconfident;                       // VPU was unconfident in its prediction
+   bool vp_correct;                           // VPU generated a correct prediction
+   bool vp_incorrect;                         // VPU generated an incorrect prediction
    
 
    // ** SOURCE ** register D.

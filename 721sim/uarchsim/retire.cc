@@ -86,7 +86,7 @@ void pipeline_t::retire(size_t& instret) {
          //********************************************
          // FIX_ME #17b BEGIN
          //********************************************
-         if (PAY.buf[PAY.head].predict_flag) { // MIGHT HAVE TO CHANGE
+         if (PAY.buf[PAY.head].vp_confident) { // MIGHT HAVE TO CHANGE
             vpmeas_conf_corr ++;
             vpmeas_eligible ++;
          }
@@ -95,9 +95,9 @@ void pipeline_t::retire(size_t& instret) {
             vpmeas_ineligible_type++;
          }
 
-         if (PAY.buf[PAY.head].vpq_flag) {
+         if (PAY.buf[PAY.head].vp_confident) {
             uint64_t computed_value_vpq;
-            computed_value_vpq = VPU.retComputedValue(PAY.buf[PAY.head].vpq_index);
+            computed_value_vpq = VPU.getComputedValue(PAY.buf[PAY.head].vpq_index);
             VPU.trainOrReplace(PAY.buf[PAY.head].pc, computed_value_vpq);
          }
 

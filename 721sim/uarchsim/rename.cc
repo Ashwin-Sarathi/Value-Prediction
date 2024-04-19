@@ -1,7 +1,4 @@
 #include "pipeline.h"
-#include <stdio.h>
-
-using namespace std;
 
 //Has been fixed 
 
@@ -67,6 +64,26 @@ void pipeline_t::rename2() {
       return;
    }
 
+
+   // This is the first place where VPU flags get set, so it would be wise to initialize all the flags here
+   for (i = 0; i < dispatch_width; i++) {
+      if (!RENAME2[i].valid)
+         break;			// Not a valid instruction: Reached the end of the rename bundle so exit loop.
+
+      index = RENAME2[i].index;
+
+      PAY.buf[index].vp_ineligible        = false;
+      PAY.buf[index].vp_ineligible_type   = false;
+      PAY.buf[index].vp_ineligible_drop   = false;
+
+      PAY.buf[index].vp_eligible          = false;
+      PAY.buf[index].vp_miss              = false;
+      PAY.buf[index].vp_confident         = false;
+      PAY.buf[index].vp_unconfident       = false;
+      PAY.buf[index].vp_correct           = false;
+      PAY.buf[index].vp_incorrect         = false;
+   }
+
    // Third stall condition: There aren't enough rename resources for the current rename bundle.
    bundle_dst = 0;
    bundle_branch = 0;
@@ -104,22 +121,17 @@ void pipeline_t::rename2() {
          bundle_branch++; 
       }
 
+      // bool branch_flag = IS_BRANCH(PAY.buf[index].flags);
       bool load_flag = IS_LOAD(PAY.buf[index].flags);
       if (VALUE_PREDICTION_ENABLED) {
          if(VPU.isEligible(PAY.buf[index].pc, PAY.buf[index].checkpoint, PAY.buf[index].C_valid, PAY.buf[index].fu, load_flag)){
             bundle_VPQ++;
             PAY.buf[index].vp_eligible = true;
-         }    
+         }   
          else {
-            PAY.buf[index].vp_eligible= false;
-            PAY.buf[index].vpq_flag = false;
-            PAY.buf[index].predict_flag = false;
-         }  
-      }
-      else {
-         PAY.buf[index].vp_eligible= false;
-         PAY.buf[index].vpq_flag = false;
-         PAY.buf[index].predict_flag = false; 
+            PAY.buf[index].vp_ineligible = true;
+            PAY.buf[index].vp_ineligible_type = true;
+         }
       }
 
       //********************************************
@@ -144,23 +156,17 @@ void pipeline_t::rename2() {
    //calling the stall branch & stall_reg functions from the renamer class
    //REN ---> register rename module
    if(REN->stall_branch(bundle_branch)) {
-      return;
+         return;
    }
    if(REN->stall_reg(bundle_dst)) {
-      return;
+         return;
    }
 
-   // if (VALUE_PREDICTION_ENABLED) {
-   //    not_enough_vpq = VPU.stallVPQ(bundle_VPQ);
-   //    // if(not_enough_vpq && !vpq_full_policy) {
-   //    if(not_enough_vpq) {
-   //       // test = true;
-   //       return;
-   //    }
-   // }
-
-   if (VALUE_PREDICTION_ENABLED && VPU.stallVPQ(bundle_VPQ)) {
-      return;
+   if (VALUE_PREDICTION_ENABLED) {
+      not_enough_vpq = VPU.stallVPQ(bundle_VPQ);
+      if(not_enough_vpq && !vpq_full_policy) {
+         return;
+      }
    }
 
    //********************************************
@@ -175,7 +181,6 @@ void pipeline_t::rename2() {
          break;			// Not a valid instruction: Reached the end of the rename bundle so exit loop.
 
       index = RENAME2[i].index;
-      assert(!REN->freelist_empty());
 
       // FIX_ME #3
       // Rename source registers (first) and destination register (second).
@@ -208,66 +213,96 @@ void pipeline_t::rename2() {
         PAY.buf[index].D_phys_reg = REN->rename_rsrc(PAY.buf[index].D_log_reg);
       }
 
-      //********************************************
-      // Predicting values of destination registers 
-      //********************************************
-
       //The destination register is C
-      //If valid, call rename_rdst function. Input: log_reg, the logical register to rename
+      //If valid, call rename_rdst function. Input: log_reg, the logical register to rename      
+      if (PAY.buf[index].C_valid) {
+         PAY.buf[index].C_phys_reg = REN->rename_rdst(PAY.buf[index].C_log_reg);
+      }
 
-      if (VALUE_PREDICTION_ENABLED) {
-         if (PAY.buf[index].C_valid) {
+      //////////////////////////////////////////////
+      // Predicting values of destination registers 
+      //////////////////////////////////////////////
 
-            uint64_t predicted_value;
-            db_t* actual_value;
-            
-            //Only allocate if VPU is not full
-            //if vpq_full_policy is 1 and VPU is full, don't allocate
-            if(!VPU.isVPQFull() && PAY.buf[index].vp_eligible){
-               // VPQ index obtains the value of the tail and the instruction is enqueued
-               PAY.buf[index].vpq_index = VPU.enqueue(PAY.buf[index].pc);
-               PAY.buf[index].vpq_flag = true;
-            }
-            else {
-               PAY.buf[index].vpq_flag = false; 
-            } 
-            
-            //oracle confidence 
-            if(oracle_confidence){
-               if (PAY.buf[index].good_instruction && !PAY.buf[index].checkpoint && PAY.buf[index].vp_eligible && PAY.buf[index].vpq_flag) {
-                  assert(PAY.buf[index].vp_eligible && PAY.buf[index].vpq_flag);
-                  actual_value = get_pipe()->peek(PAY.buf[index].db_index);
-                  if(VPU.getOracleConfidentPrediction(PAY.buf[index].pc, predicted_value, actual_value->a_rdst[0].value)){
-                     PAY.buf[index].C_phys_reg = REN->rename_rdst(PAY.buf[index].C_log_reg);
-                     PAY.buf[index].predicted_value = predicted_value;
-                     PAY.buf[index].predict_flag = true; 
-                  }
-                  else{
-                     PAY.buf[index].C_phys_reg = REN->rename_rdst(PAY.buf[index].C_log_reg);
-                     PAY.buf[index].predict_flag = false; 
-                  }
+      // We predict only for real and oracle modes here since perfect value prediction is handled in dispatch
+      if (VALUE_PREDICTION_ENABLED && !PERFECT_VALUE_PREDICTION && PAY.buf[index].C_valid) {
+         // First step is to rename the destination register if the instruction has one
+
+         uint64_t predicted_value;
+         db_t* actual_value;
+
+         // Only allocate if VPU is not full
+         // If vpq_full_policy is 1 and VPU is full, don't allocate
+         if(!VPU.isVPQFull() && PAY.buf[index].vp_eligible) {
+            // VPQ index obtains the value of the tail and the instruction is enqueued
+            PAY.buf[index].vpq_index = VPU.enqueue(PAY.buf[index].pc);
+         }
+         else {
+            PAY.buf[index].vp_eligible = false; 
+            PAY.buf[index].vp_ineligible = true;
+            PAY.buf[index].vp_ineligible_drop = true;
+         }
+
+         // When in oracle mode, prediction is fed only if is correct, else it is always unconfident and incorrect
+         if (oracle_confidence) {
+            // if (PAY.buf[index].good_instruction && !PAY.buf[index].checkpoint && PAY.buf[index].vp_eligible) {
+            if (PAY.buf[index].vp_eligible) {
+               assert(PAY.buf[index].good_instruction && !PAY.buf[index].checkpoint); // Because to be eligible it has to be a good instruction and not a checkpoint
+               actual_value = get_pipe()->peek(PAY.buf[index].db_index);
+
+               // Tag match but value mismatch
+               if(VPU.getOraclePrediction(PAY.buf[index].pc, predicted_value, actual_value->a_rdst[0].value) == 1){
+                  PAY.buf[index].vp_unconfident = true; 
+                  PAY.buf[index].vp_incorrect = true;
+               }
+
+               // Tag match and value match case
+               else if (VPU.getOraclePrediction(PAY.buf[index].pc, predicted_value, actual_value->a_rdst[0].value) == 2) {
+                  PAY.buf[index].predicted_value = predicted_value;
+                  PAY.buf[index].vp_confident = true; 
+                  PAY.buf[index].vp_correct = true;
+               }
+
+               // Tag not found
+               else if (VPU.getOraclePrediction(PAY.buf[index].pc, predicted_value, actual_value->a_rdst[0].value) == 0) {
+                  PAY.buf[index].vp_miss = true;
+               }
+
+               // This case is not possible
+               else {
+                  assert(1);
                }
             }
-
-            //Real confidence: check for a confident prediction for the logical destination register & 
-            if ((VPU.getConfidentPrediction(PAY.buf[index].pc, predicted_value)) && !oracle_confidence && PAY.buf[index].vp_eligible && PAY.buf[index].vpq_flag) {
-               // A confident prediction is available
-               //Instance is incremented within get_confident_prediction
-               assert(PAY.buf[index].vp_eligible && PAY.buf[index].vpq_flag);
-               PAY.buf[index].C_phys_reg = REN->rename_rdst(PAY.buf[index].C_log_reg);
-               PAY.buf[index].predicted_value = predicted_value; // Update the predicted value in the payload
-               PAY.buf[index].predict_flag = true;
-            }             
             else {
-               // No confident prediction available
-               PAY.buf[index].C_phys_reg = REN->rename_rdst(PAY.buf[index].C_log_reg);
-               PAY.buf[index].predict_flag = false;
+               PAY.buf[index].vp_ineligible = true;
             }
          }
-      }
-      else {
-         if (PAY.buf[index].C_valid) {
-            PAY.buf[index].C_phys_reg = REN->rename_rdst(PAY.buf[index].C_log_reg);
+
+         // When in real confidence mode, prediction is fed regardless and is checked later for correctness
+         else {
+            if (PAY.buf[index].vp_eligible) {
+               assert(PAY.buf[index].good_instruction && !PAY.buf[index].checkpoint); // Because to be eligible it has to be a good instruction and not a checkpoint
+
+               // Tag match and max confidence
+               if (VPU.getRealPrediction(PAY.buf[index].pc, predicted_value) == 2) {
+                  PAY.buf[index].predicted_value = predicted_value; // Update the predicted value in the payload
+                  PAY.buf[index].vp_confident = true;
+               }
+
+               // Tag match but not max condifence
+               else if (VPU.getRealPrediction(PAY.buf[index].pc, predicted_value) == 1) {
+                  PAY.buf[index].vp_unconfident = true;
+               }
+
+               // Tag not found
+               else if (VPU.getRealPrediction(PAY.buf[index].pc, predicted_value) == 0) {
+                  PAY.buf[index].vp_miss = true;
+               }
+
+               // This case is not possible
+               else {
+                  assert(1);
+               }
+            }
          }
       }
 

@@ -101,38 +101,6 @@ uint64_t svp_vpq::extractTag(uint64_t pc) {
     return (pc >> (2 + svp_index_bits)) & ((1ULL << svp_tag_bits) - 1);
 }
 
-bool svp_vpq::getPrediction(uint64_t pc, uint64_t& predicted_value) {
-    uint64_t tag = extractTag(pc); // Use a method to extract the tag based on PC
-    for (uint64_t i = 0; i < svp_size; ++i) {
-        if (svp_table[i].tag == tag && svp_table[i].confidence == svp_conf_max) {
-            predicted_value = svp_table[i].last_value + (svp_table[i].stride * svp_table[i].instance);
-            svp_table[i].instance++;            //increment the instance 
-            return true;
-        }
-    }
-
-    // No SVP hit or if conf != conf_max
-    return false;
-}
-
-bool svp_vpq::getOraclePrediction(uint64_t pc, uint64_t& predicted_value, uint64_t debugger_value) {
-    uint64_t tag = extractTag(pc); // Use a method to extract the tag based on PC
-
-    for (uint64_t i = 0; i < svp_size; ++i) {
-
-        if (svp_table[i].tag == tag) {          //Generate a prediction every time we get an SVP hit
-            predicted_value = svp_table[i].last_value + (svp_table[i].stride * svp_table[i].instance);
-            if(predicted_value == debugger_value){
-                svp_table[i].instance++;
-                return true;
-            }  
-        }
-    }
-
-    //No SVP hit or wrong prediction 
-    return false;
-}
-
 void svp_vpq::printSVPStatus() {
     fprintf(stdout, "SVP Entries:\n");
     fprintf(stdout, "Index\tTag\tLast Value\tStride\tConfidence\tInstance\n");
@@ -242,7 +210,7 @@ void svp_vpq::addComputedValueToVPQ(unsigned int vpq_index, uint64_t computed_va
     vpq_queue[vpq_index].computed_value = computed_value;
 }
 
-uint64_t svp_vpq::retComputedValue(uint64_t index) {
+uint64_t svp_vpq::getComputedValue(uint64_t index) {
     return vpq_queue[index].computed_value; 
 }
 
@@ -317,8 +285,21 @@ void svp_vpq::partialRollbackVPU(uint64_t checkpointed_tail, bool checkpointed_t
 // Additional functions to support value prediction in the pipeline
 //-------------------------------------------------------------------
 
-bool svp_vpq::getConfidentPrediction(uint64_t pc, uint64_t& predicted_value) {
-    return getPrediction(pc, predicted_value);
+int svp_vpq::getRealPrediction(uint64_t pc, uint64_t& predicted_value) {
+    uint64_t tag = extractTag(pc); // Use a method to extract the tag based on PC
+    uint64_t index = extractIndex(pc);
+
+        if (svp_table[index].tag == tag) {
+            svp_table[index].instance ++;            // Increment the instance counter
+            if (svp_table[index].confidence == svp_conf_max) {
+                predicted_value = svp_table[index].last_value + (svp_table[index].stride * svp_table[index].instance);  
+                return 2;                            // Tag match and max confidence
+            }                   
+            return 1;                                // Tag match but unconfident
+        }
+
+    // No SVP hit 
+    return 0;
 }
 
 bool svp_vpq::isEligible(uint64_t pc, bool is_branch, bool destination_register, fu_type instruction_type, bool load) {
@@ -352,8 +333,23 @@ bool svp_vpq::isEligible(uint64_t pc, bool is_branch, bool destination_register,
     return true;
 }
 
-bool svp_vpq::getOracleConfidentPrediction(uint64_t pc, uint64_t& predicted_value, uint64_t actual_value) {
-    return getOraclePrediction(pc, predicted_value, actual_value);
+int svp_vpq::getOraclePrediction(uint64_t pc, uint64_t& predicted_value, uint64_t actual_value) {
+    uint64_t tag = extractTag(pc); // Use a method to extract the tag based on PC
+    uint64_t index = extractIndex(pc);
+
+    if (svp_table[index].tag == tag) {          // Generate a prediction every time we get an SVP hit
+        svp_table[index].instance++;
+        predicted_value = svp_table[index].last_value + (svp_table[index].stride * svp_table[index].instance);
+        if(predicted_value == actual_value) {
+            return 2;                       // 2 implies tag match and value match
+        }  
+        else {
+            return 1;                       // 1 imlpies tag match but value mismatch
+        }
+    }
+
+    //No SVP hit or wrong prediction 
+    return 0;                                   // 0 implies no tag match and SVP miss
 }
 
 bool svp_vpq::comparePredictedAndComputed(uint64_t predicted_value, uint64_t computed_value) {
