@@ -1,4 +1,6 @@
 #include "pipeline.h"
+#include <iostream>
+using namespace std;
 
 //Has been fixed 
 
@@ -121,17 +123,41 @@ void pipeline_t::rename2() {
          bundle_branch++; 
       }
 
-      // bool branch_flag = IS_BRANCH(PAY.buf[index].flags);
-      bool load_flag = IS_LOAD(PAY.buf[index].flags);
-      if (VALUE_PREDICTION_ENABLED) {
-         if(VPU.isEligible(PAY.buf[index].pc, PAY.buf[index].checkpoint, PAY.buf[index].C_valid, PAY.buf[index].fu, load_flag)){
-            bundle_VPQ++;
-            PAY.buf[index].vp_eligible = true;
-         }   
-         else {
-            PAY.buf[index].vp_ineligible = true;
-            PAY.buf[index].vp_ineligible_type = true;
+      ////////////////////////////////////////////////////////////////////////////////////////////////////
+      // Checking the eligibility of instructions for value prediction
+      // 1. Checks if its oracle confidence mode. If it is then on top of other conditions, also checks 
+      //    if it is a good instruction. If yes, eligible, else not eligible.
+      // 2. If it is real confidence, then just checks base conditions.
+      ////////////////////////////////////////////////////////////////////////////////////////////////////
+
+      bool load_flag = IS_LOAD(PAY.buf[index].flags); // If true, then instruction is of type load
+
+      if (VALUE_PREDICTION_ENABLED && !PERFECT_VALUE_PREDICTION) {
+         if (oracle_confidence) {
+            if (VPU.isEligible(PAY.buf[index].pc, PAY.buf[index].checkpoint, PAY.buf[index].C_valid, PAY.buf[index].fu, load_flag) && PAY.buf[index].good_instruction) {
+               bundle_VPQ ++;
+               PAY.buf[index].vp_eligible = true;
+            }
+            else {
+               PAY.buf[index].vp_eligible = false;
+               PAY.buf[index].vp_ineligible_type = true;
+            }
          }
+         else {
+            if(VPU.isEligible(PAY.buf[index].pc, PAY.buf[index].checkpoint, PAY.buf[index].C_valid, PAY.buf[index].fu, load_flag)){
+               bundle_VPQ++;
+               PAY.buf[index].vp_eligible = true;
+            }   
+            else {
+               PAY.buf[index].vp_eligible = false;
+               PAY.buf[index].vp_ineligible_type = true;
+            }
+         }
+      }
+
+      // Sanity check to ensure that if VP mode is off, then an instruction is never eligible for prediction.
+      if (!VALUE_PREDICTION_ENABLED) {
+         assert(!PAY.buf[index].vp_eligible);
       }
 
       //********************************************
@@ -219,51 +245,67 @@ void pipeline_t::rename2() {
          PAY.buf[index].C_phys_reg = REN->rename_rdst(PAY.buf[index].C_log_reg);
       }
 
-      //////////////////////////////////////////////
+      ////////////////////////////////////////////////////////////////////////////////////////////
       // Predicting values of destination registers 
-      //////////////////////////////////////////////
+      // 1. If an instruction is eligible for value prediction, it is first added to the VPQ
+      // 2. Then we have 2 modes to look for a prediction, oracle and real:
+      //    a. Oracle: We try to obtain a prediction and this prediction is passed only if 
+      //       it is correct, and hence it is confident.
+      //    b. Real: We obtain a prediction and it is passed regardless. Only difference is that,
+      //       in case of real, the prediction is written to PRF only if it is confident. But we
+      //       must always record the prediction to check for lost opportunity.
+      ////////////////////////////////////////////////////////////////////////////////////////////
 
       // We predict only for real and oracle modes here since perfect value prediction is handled in dispatch
-      if (VALUE_PREDICTION_ENABLED && !PERFECT_VALUE_PREDICTION && PAY.buf[index].C_valid) {
-         // First step is to rename the destination register if the instruction has one
+      if (VALUE_PREDICTION_ENABLED && !PERFECT_VALUE_PREDICTION && PAY.buf[index].vp_eligible) {
+         // Confirms that an instruction that makes it here matches the predefined eligibility criteria
+         if (oracle_confidence) {
+            assert(VPU.isEligible(PAY.buf[index].pc, PAY.buf[index].checkpoint, PAY.buf[index].C_valid, PAY.buf[index].fu, IS_LOAD(PAY.buf[index].flags)) && PAY.buf[index].good_instruction);
+         } 
+         else {
+            assert(VPU.isEligible(PAY.buf[index].pc, PAY.buf[index].checkpoint, PAY.buf[index].C_valid, PAY.buf[index].fu, IS_LOAD(PAY.buf[index].flags)));
+         }
+
+         // If VPQ full and need entries for VP-eligible instructions in bundle => (vpq_full_policy == 0): stall bundle, (vpq_full_policy == 1): don’t allocate VPQ entries
+         // If vpq_full_policy is 1 and VPU is full, don't allocate
+         if (VPU.isVPQFull()) {
+            if (vpq_full_policy) {
+               PAY.buf[index].vp_eligible = false;
+               PAY.buf[index].vp_ineligible_drop = true;
+            }
+            else {
+               cerr << "VPQ can't be full if vpq_full_policy is stall." << endl;
+               assert(1);
+            }
+         }
+         else {
+            PAY.buf[index].vpq_index = VPU.enqueue(PAY.buf[index].pc);
+         }
 
          uint64_t predicted_value;
          db_t* actual_value;
 
-         // Only allocate if VPU is not full
-         // If vpq_full_policy is 1 and VPU is full, don't allocate
-         if(!VPU.isVPQFull() && PAY.buf[index].vp_eligible) {
-            // VPQ index obtains the value of the tail and the instruction is enqueued
-            PAY.buf[index].vpq_index = VPU.enqueue(PAY.buf[index].pc);
-         }
-         else {
-            PAY.buf[index].vp_eligible = false; 
-            PAY.buf[index].vp_ineligible = true;
-            PAY.buf[index].vp_ineligible_drop = true;
-         }
-
          // When in oracle mode, prediction is fed only if is correct, else it is always unconfident and incorrect
-         if (oracle_confidence) {
-            // if (PAY.buf[index].good_instruction && !PAY.buf[index].checkpoint && PAY.buf[index].vp_eligible) {
-            if (PAY.buf[index].vp_eligible) {
-               assert(PAY.buf[index].good_instruction && !PAY.buf[index].checkpoint); // Because to be eligible it has to be a good instruction and not a checkpoint
+         if (oracle_confidence) {            
                actual_value = get_pipe()->peek(PAY.buf[index].db_index);
+               int prediction_result = VPU.getOraclePrediction(PAY.buf[index].pc, predicted_value, actual_value->a_rdst[0].value);
 
                // Tag match but value mismatch
-               if(VPU.getOraclePrediction(PAY.buf[index].pc, predicted_value, actual_value->a_rdst[0].value) == 1){
+               if(prediction_result == 1){
+                  PAY.buf[index].predicted_value = predicted_value;
                   PAY.buf[index].vp_unconfident = true; 
                   PAY.buf[index].vp_incorrect = true;
                }
 
                // Tag match and value match case
-               else if (VPU.getOraclePrediction(PAY.buf[index].pc, predicted_value, actual_value->a_rdst[0].value) == 2) {
+               else if (prediction_result == 2) {
                   PAY.buf[index].predicted_value = predicted_value;
                   PAY.buf[index].vp_confident = true; 
                   PAY.buf[index].vp_correct = true;
                }
 
                // Tag not found
-               else if (VPU.getOraclePrediction(PAY.buf[index].pc, predicted_value, actual_value->a_rdst[0].value) == 0) {
+               else if (prediction_result == 0) {
                   PAY.buf[index].vp_miss = true;
                }
 
@@ -271,38 +313,33 @@ void pipeline_t::rename2() {
                else {
                   assert(1);
                }
-            }
-            else {
-               PAY.buf[index].vp_ineligible = true;
-            }
          }
 
          // When in real confidence mode, prediction is fed regardless and is checked later for correctness
-         else {
-            if (PAY.buf[index].vp_eligible) {
-               assert(PAY.buf[index].good_instruction && !PAY.buf[index].checkpoint); // Because to be eligible it has to be a good instruction and not a checkpoint
+         else {            
+            int prediction_result = VPU.getRealPrediction(PAY.buf[index].pc, predicted_value);
 
-               // Tag match and max confidence
-               if (VPU.getRealPrediction(PAY.buf[index].pc, predicted_value) == 2) {
-                  PAY.buf[index].predicted_value = predicted_value; // Update the predicted value in the payload
-                  PAY.buf[index].vp_confident = true;
-               }
-
-               // Tag match but not max condifence
-               else if (VPU.getRealPrediction(PAY.buf[index].pc, predicted_value) == 1) {
-                  PAY.buf[index].vp_unconfident = true;
-               }
-
-               // Tag not found
-               else if (VPU.getRealPrediction(PAY.buf[index].pc, predicted_value) == 0) {
-                  PAY.buf[index].vp_miss = true;
-               }
-
-               // This case is not possible
-               else {
-                  assert(1);
-               }
+            // Tag match and max confidence
+            if (prediction_result == 2) {
+               PAY.buf[index].predicted_value = predicted_value; // Update the predicted value in the payload
+               PAY.buf[index].vp_confident = true;
             }
+
+            // Tag match but not max condifence
+            else if (prediction_result == 1) {
+               PAY.buf[index].predicted_value = predicted_value;
+               PAY.buf[index].vp_unconfident = true;
+            }
+
+            // Tag not found
+            else if (prediction_result == 0) {
+               PAY.buf[index].vp_miss = true;
+            }
+
+            // This case is not possible
+            else {
+               assert(1);
+            }            
          }
       }
 

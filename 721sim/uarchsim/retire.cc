@@ -86,16 +86,47 @@ void pipeline_t::retire(size_t& instret) {
          //********************************************
          // FIX_ME #17b BEGIN
          //********************************************
-         if (PAY.buf[PAY.head].vp_confident) { // MIGHT HAVE TO CHANGE
-            vpmeas_conf_corr ++;
+
+         // Recording vpmeas
+         if (PAY.buf[PAY.head].vp_ineligible) {
+            vpmeas_ineligible ++;
+         }
+
+         if (PAY.buf[PAY.head].vp_ineligible_type) {
+            vpmeas_ineligible_type ++;
+         }
+
+         if (PAY.buf[PAY.head].vp_ineligible_drop) {
+            vpmeas_ineligible_drop ++;
+         }
+
+         if (PAY.buf[PAY.head].vp_eligible) {
             vpmeas_eligible ++;
          }
-         else {
-            vpmeas_ineligible++;
-            vpmeas_ineligible_type++;
+
+         if (PAY.buf[PAY.head].vp_miss) {
+            vpmeas_miss ++;
          }
 
          if (PAY.buf[PAY.head].vp_confident) {
+            if (PAY.buf[PAY.head].vp_correct) {
+               vpmeas_conf_corr ++;
+            }
+            else if (PAY.buf[PAY.head].vp_incorrect) {
+               vpmeas_conf_incorr ++;
+            }
+         }
+
+         if (PAY.buf[PAY.head].vp_unconfident) {
+            if (PAY.buf[PAY.head].vp_correct) {
+               vpmeas_unconf_corr ++;
+            }
+            else if (PAY.buf[PAY.head].vp_incorrect) {
+               vpmeas_unconf_incorr ++;
+            }
+         }
+
+         if (VALUE_PREDICTION_ENABLED && !PERFECT_VALUE_PREDICTION && PAY.buf[PAY.head].vp_confident) {
             uint64_t computed_value_vpq;
             computed_value_vpq = VPU.getComputedValue(PAY.buf[PAY.head].vpq_index);
             VPU.trainOrReplace(PAY.buf[PAY.head].pc, computed_value_vpq);
@@ -165,7 +196,7 @@ void pipeline_t::retire(size_t& instret) {
             // The head instruction was already committed above (fix #17b).
 	    // Squash all instructions after it.
             if (VALUE_PREDICTION_ENABLED && !PERFECT_VALUE_PREDICTION) {
-               VPU.fullRollbackVPU();
+               VPU.fullSquashVPU();
             }
             squash_complete(next_inst_pc);
             inc_counter(recovery_count);
@@ -193,7 +224,7 @@ void pipeline_t::retire(size_t& instret) {
 
          // Full squash, including the mispredicted load, and restart fetching from the load.
          if (VALUE_PREDICTION_ENABLED && !PERFECT_VALUE_PREDICTION) {
-            VPU.fullRollbackVPU();
+            VPU.fullSquashVPU();
          }
          squash_complete(offending_PC);
          inc_counter(recovery_count);
@@ -229,7 +260,7 @@ void pipeline_t::retire(size_t& instret) {
 
          // Squash the pipeline.
          if (VALUE_PREDICTION_ENABLED && !PERFECT_VALUE_PREDICTION) {
-            VPU.fullRollbackVPU();
+            VPU.fullSquashVPU();
          }
          squash_complete(jump_PC);
          inc_counter(recovery_count);

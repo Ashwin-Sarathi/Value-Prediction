@@ -63,7 +63,7 @@ class svp_vpq {
         void printVPQStatus();  
 
         // Functions to manage VPU rollback
-        void fullRollbackVPU();
+        void fullSquashVPU();
         void partialRollbackVPU(uint64_t checkpointed_tail, bool checkpointed_tail_phase_bit);
 
         // Additional functions to support value prediction in the pipeline

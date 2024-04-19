@@ -213,9 +213,24 @@ void pipeline_t::dispatch() {
       if (VALUE_PREDICTION_ENABLED && PERFECT_VALUE_PREDICTION && PAY.buf[index].good_instruction && !PAY.buf[index].checkpoint && PAY.buf[index].C_valid) {
          PAY.buf[index].vp_confident = true;
          PAY.buf[index].vp_correct = true;
+         PAY.buf[index].vp_eligible = true;
          actual = get_pipe()->peek(PAY.buf[index].db_index);
          PAY.buf[index].predicted_value = actual->a_rdst[0].value;
          REN->write(PAY.buf[index].C_phys_reg, PAY.buf[index].predicted_value);
+      }
+
+      if (VALUE_PREDICTION_ENABLED && PERFECT_VALUE_PREDICTION) {
+         if (!(PAY.buf[index].good_instruction && !PAY.buf[index].checkpoint && PAY.buf[index].C_valid)) {
+            PAY.buf[index].vp_ineligible = true;
+            PAY.buf[index].vp_ineligible_type = true;
+            PAY.buf[index].vp_ineligible_drop= false;
+            PAY.buf[index].vp_eligible = false;
+            PAY.buf[index].vp_miss = false;
+            PAY.buf[index].vp_confident = false;
+            PAY.buf[index].vp_unconfident = false;
+            PAY.buf[index].vp_correct = false;
+            PAY.buf[index].vp_incorrect = false;
+         }
       }
 
       // FIX_ME #9

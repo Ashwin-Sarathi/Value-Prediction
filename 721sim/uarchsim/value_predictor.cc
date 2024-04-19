@@ -35,7 +35,7 @@ void svp_vpq::trainOrReplace(uint64_t pc, uint64_t value) {
     uint64_t index = extractIndex(pc); // Use a method to extract the index based on PC
     uint64_t tag = extractTag(pc); // Use a method to extract the tag based on PC
 
-    if (svp_table[index].tag == tag || svp_table[index].tag == 0) {        //SVP hit or no tag
+    if (svp_table[index].tag == tag) {        //SVP hit or no tag
         // Existing entry, check for stride consistency
         int64_t new_stride = value - svp_table[index].last_value;
         if (svp_table[index].stride == new_stride) {
@@ -125,10 +125,6 @@ uint64_t svp_vpq::generateVPQEntryPC(uint64_t pc) {
 }
 
 int svp_vpq::enqueue(uint64_t pc) {
-    // if (isVPQFull()) {
-    //     std::cerr << "ERROR: Attempted to enqueue to a full Value Prediction Queue.\n";
-    //     return false;
-    // }
     assert(!isVPQFull());
     unsigned int old_tail = vpq_tail;
 
@@ -245,7 +241,7 @@ void svp_vpq::printVPQStatus() {
 //-----------------------------------
 // Functions to manage VPU rollback
 //-----------------------------------
-void svp_vpq::fullRollbackVPU() {
+void svp_vpq::fullSquashVPU() {
     // For a full rollback of VPQ, the VPQ tail is set to the VPQ head
     vpq_tail = vpq_head;
     vpq_tail_phase_bit = vpq_head_phase_bit;
@@ -349,7 +345,7 @@ int svp_vpq::getOraclePrediction(uint64_t pc, uint64_t& predicted_value, uint64_
     }
 
     //No SVP hit or wrong prediction 
-    return 0;                                   // 0 implies no tag match and SVP miss
+    return 0;                               // 0 implies no tag match and SVP miss
 }
 
 bool svp_vpq::comparePredictedAndComputed(uint64_t predicted_value, uint64_t computed_value) {
