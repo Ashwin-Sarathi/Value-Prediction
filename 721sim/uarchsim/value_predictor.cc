@@ -61,6 +61,7 @@ void svp_vpq::trainOrReplace(uint64_t pc, uint64_t value) {
         // Decrement the instance counter
         if (svp_table[index].instance > 0) {
             svp_table[index].instance--;
+            assert(svp_table[index].instance >= 0);
         }
     } else {
         if (svp_table[index].confidence <= svp_replace) {
@@ -68,7 +69,7 @@ void svp_vpq::trainOrReplace(uint64_t pc, uint64_t value) {
             svp_table[index].stride = value;
             svp_table[index].last_value = value;
             svp_table[index].confidence = 0; 
-            svp_table[index].instance = countVPQInstances(pc) - 1;
+            svp_table[index].instance = countVPQInstances(pc);
         }
     }
 
@@ -77,6 +78,7 @@ void svp_vpq::trainOrReplace(uint64_t pc, uint64_t value) {
 }
 
 unsigned int svp_vpq::countVPQInstances(uint64_t pc) {
+    cout << "Counting" << endl;
     unsigned int count = 0;
     uint64_t temp_vpq_head = vpq_head;
     bool temp_vpq_head_phase_bit = vpq_head_phase_bit;
@@ -95,7 +97,7 @@ unsigned int svp_vpq::countVPQInstances(uint64_t pc) {
             temp_vpq_head = 0;
         }
     }
-    return (count - 1);
+    return (count == 0) ? 0 : (count - 1);
 }
 
 //Extract index from the PC, based on the number of index bits

@@ -318,7 +318,7 @@ void pipeline_t::rename2() {
 
                // Tag not found
                else if (prediction_result == 0) {
-                  PAY.buf[index].vp_eligible = false;
+                  // PAY.buf[index].vp_eligible = false;
                   PAY.buf[index].vp_miss = true;
                   assert(!PAY.buf[index].vp_unconfident);
                   assert(!PAY.buf[index].vp_confident);
@@ -352,7 +352,7 @@ void pipeline_t::rename2() {
 
                // Tag not found
                else if (prediction_result == 0) {
-                  PAY.buf[index].vp_eligible = false;
+                  // PAY.buf[index].vp_eligible = false;
                   PAY.buf[index].vp_miss = true;
                   assert(!PAY.buf[index].vp_unconfident);
                   assert(!PAY.buf[index].vp_confident);

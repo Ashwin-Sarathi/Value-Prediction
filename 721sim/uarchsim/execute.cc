@@ -293,32 +293,58 @@ void pipeline_t::load_replay() {
          // Replayed loads do not make it to the writeback stage. So in case of prediction, the 
          // value comparison must be done here itself. The correct value must also be deposited 
          // in the VPQ over here. This only happens in the case of real value prediction
-         if (VALUE_PREDICTION_ENABLED && !PERFECT_VALUE_PREDICTION && !oracle_confidence && PAY.buf[index].vp_eligible) {
-            // If an instruction is eligible, it should have generated a prediction
-            assert(PAY.buf[index].vp_confident || PAY.buf[index].vp_unconfident);
+         // if (VALUE_PREDICTION_ENABLED && !PERFECT_VALUE_PREDICTION && !oracle_confidence && PAY.buf[index].vp_eligible) {
+         //    // If an instruction is eligible, it should have generated a prediction
+         //    assert(PAY.buf[index].vp_confident || PAY.buf[index].vp_unconfident);
 
-            // Only in the case of confident values, they are written into the PRF
-            if (!VPU.comparePredictedAndComputed(PAY.buf[index].predicted_value, PAY.buf[index].C_value.dw)) {
-               if (PAY.buf[index].vp_confident) {
-                  // Sets the value mispredict flag in the AL in case the prediction is incorrect
-                  REN->set_value_misprediction(PAY.buf[index].AL_index);
-                  PAY.buf[index].vp_incorrect = true;
-                  assert(!PAY.buf[index].vp_correct);
-                  assert(!PAY.buf[index].vp_unconfident);
+         //    // Only in the case of confident values, they are written into the PRF
+         //    if (!VPU.comparePredictedAndComputed(PAY.buf[index].predicted_value, PAY.buf[index].C_value.dw)) {
+         //       if (PAY.buf[index].vp_confident) {
+         //          // Sets the value mispredict flag in the AL in case the prediction is incorrect
+         //          REN->set_value_misprediction(PAY.buf[index].AL_index);
+         //          PAY.buf[index].vp_incorrect = true;
+         //          assert(!PAY.buf[index].vp_correct);
+         //          assert(!PAY.buf[index].vp_unconfident);
+         //       }
+         //       else {
+         //          PAY.buf[index].vp_incorrect = true;
+         //          assert(!PAY.buf[index].vp_correct);
+         //          assert(PAY.buf[index].vp_unconfident);
+         //       }
+         //    }
+         //    else {
+         //       PAY.buf[index].vp_correct = true;
+         //       assert(!PAY.buf[index].vp_incorrect);
+         //    }
+
+         //    // Adds the computed value to the VPQ entry field of the VPQ structure
+         //    VPU.addComputedValueToVPQ(PAY.buf[index].vpq_index, PAY.buf[index].C_value.dw);
+         // }
+
+         if (VALUE_PREDICTION_ENABLED && !PERFECT_VALUE_PREDICTION && PAY.buf[index].vp_eligible) {
+            assert(PAY.buf[index].vp_confident || PAY.buf[index].vp_unconfident || PAY.buf[index].vp_miss);
+            VPU.addComputedValueToVPQ(PAY.buf[index].vpq_index, PAY.buf[index].C_value.dw);
+            if (!oracle_confidence) {
+               // Only in the case of confident values, they are written into the PRF
+               if (!VPU.comparePredictedAndComputed(PAY.buf[index].predicted_value, PAY.buf[index].C_value.dw)) {
+                  if (PAY.buf[index].vp_confident) {
+                     // Sets the value mispredict flag in the AL in case the prediction is incorrect
+                     REN->set_value_misprediction(PAY.buf[index].AL_index);
+                     PAY.buf[index].vp_incorrect = true;
+                     assert(!PAY.buf[index].vp_correct);
+                     assert(!PAY.buf[index].vp_unconfident);
+                  }
+                  else {
+                     PAY.buf[index].vp_incorrect = true;
+                     assert(!PAY.buf[index].vp_correct);
+                     assert(PAY.buf[index].vp_unconfident);
+                  }
                }
                else {
-                  PAY.buf[index].vp_incorrect = true;
-                  assert(!PAY.buf[index].vp_correct);
-                  assert(PAY.buf[index].vp_unconfident);
+                  PAY.buf[index].vp_correct = true;
+                  assert(!PAY.buf[index].vp_incorrect);
                }
             }
-            else {
-               PAY.buf[index].vp_correct = true;
-               assert(!PAY.buf[index].vp_incorrect);
-            }
-
-            // Adds the computed value to the VPQ entry field of the VPQ structure
-            VPU.addComputedValueToVPQ(PAY.buf[index].vpq_index, PAY.buf[index].C_value.dw);
          }
 
          //********************************************
