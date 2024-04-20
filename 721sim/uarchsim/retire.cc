@@ -174,10 +174,10 @@ void pipeline_t::retire(size_t& instret) {
             instret++;
 	    inc_counter(commit_count);
 
-         // if(!(num_insn % 1000)){
-         //    VPU.printSVPStatus(); 
-         //    VPU.printVPQStatus(); 
-         // }
+         if(!(num_insn % 1000)){
+            VPU.printSVPStatus(); 
+            VPU.printVPQStatus(); 
+         }
 	 }
 	 if (PAY.buf[PAY.head].split && PAY.buf[PAY.head].upper)
 	    inc_counter(split_count);

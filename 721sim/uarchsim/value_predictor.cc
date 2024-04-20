@@ -78,7 +78,7 @@ void svp_vpq::trainOrReplace(uint64_t pc, uint64_t value) {
 }
 
 unsigned int svp_vpq::countVPQInstances(uint64_t pc) {
-    cout << "Counting" << endl;
+    // cout << "Counting" << endl;
     unsigned int count = 0;
     uint64_t temp_vpq_head = vpq_head;
     bool temp_vpq_head_phase_bit = vpq_head_phase_bit;
@@ -270,26 +270,55 @@ void svp_vpq::fullSquashVPU() {
 }
 
 void svp_vpq::partialRollbackVPU(uint64_t checkpointed_tail, bool checkpointed_tail_phase_bit) {
-    uint64_t svp_index = 0;
-    uint64_t svp_tag = 0;
+    // We start rolling back from 1 slot behind VPQ tail because tail always points to the NEXT FREE slot in the VPQ
+    uint64_t vpq_index = 0;
+    uint64_t vpq_tag = 0;
+
+    // Various possible cases in a VPU rollback
+    // If checkpointed tail and phase matches actual tail, then no rollback
+    if ((checkpointed_tail == vpq_tail) && (checkpointed_tail_phase_bit == vpq_tail_phase_bit)) {
+        return;
+    }
+
+    // I'm just testing this to see if it can ever occur, because I can't imagine a scenario
+    if ((checkpointed_tail == vpq_tail) && (checkpointed_tail_phase_bit != vpq_tail_phase_bit)) {
+        cout << "HEAD: " << vpq_head << endl;
+        cout << "HEAD PHASE: " << vpq_head_phase_bit << endl;
+        cout << "TAIL: " << vpq_tail << endl;
+        cout << "TAIL PHASE BIT: " << vpq_tail_phase_bit << endl;
+        cout << "CHECKPOINT TAIL: " << checkpointed_tail << endl;
+        cout << "CHECKPOINTED TAIL PHASE: " << checkpointed_tail_phase_bit << endl;
+        assert(1);
+    }
+
+    // If the tail and phase matches actual head, then it is essentially a full squash
+    if ((checkpointed_tail == vpq_head) && (checkpointed_tail_phase_bit == vpq_head_phase_bit)) {
+        fullSquashVPU();
+        return;
+    }
+
+    // if ((checkpointed_tail_phase_bit == vpq_tail_phase_bit) && (checkpointed_tail > )) {
+
+    // }
     
-    do {
-        svp_index = extractIndexFromVPQEntry(vpq_tail);
-        svp_tag = extractTagfromVPQEntry(vpq_tail);
-        if (svp_table[svp_index].tag == svp_tag) {
-            svp_table[svp_index].instance --;
-            assert(svp_table[svp_index].instance >= 0);
+    while (vpq_tail != checkpointed_tail) {
+        vpq_index = vpq_queue[vpq_tail - 1].PCindex;
+        vpq_tag = vpq_queue[vpq_tail - 1].PCtag;
+        if (svp_table[vpq_index].tag == vpq_tag) {
+            svp_table[vpq_index].instance --;
+            assert(svp_table[vpq_index].instance >= 0);
         }
 
-        if (vpq_tail >= 0) {
+        if (vpq_tail > 0) {
             vpq_tail --;
         }
         else {
+            assert(vpq_tail == 0);
             vpq_tail = (vpq_size - 1);
             vpq_tail_phase_bit = !vpq_tail_phase_bit;
         }
     }
-    while (vpq_tail != checkpointed_tail);
+    
 
     assert(vpq_tail_phase_bit == checkpointed_tail_phase_bit);
 }
@@ -367,17 +396,4 @@ int svp_vpq::getOraclePrediction(uint64_t pc, uint64_t& predicted_value, uint64_
 
 bool svp_vpq::comparePredictedAndComputed(uint64_t predicted_value, uint64_t computed_value) {
     return (predicted_value == computed_value);
-}
-
-uint64_t svp_vpq::extractIndexFromVPQEntry(int vpq_index) {
-    uint64_t temp_pc = vpq_queue[vpq_index].pc;
-    uint64_t mask = (1ULL << svp_index_bits) - 1;
-    uint64_t index = temp_pc & mask;
-    return index;
-}
-
-uint64_t svp_vpq::extractTagfromVPQEntry(int vpq_index) {
-    uint64_t temp_pc = vpq_queue[vpq_index].pc;
-    uint64_t tag = temp_pc >> svp_index_bits;
-    return tag;
 }

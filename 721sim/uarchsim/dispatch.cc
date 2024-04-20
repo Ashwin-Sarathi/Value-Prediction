@@ -251,6 +251,8 @@ void pipeline_t::dispatch() {
       // Clears the ready bit of PRF if the destination is not value predicted.
       if(PAY.buf[index].C_valid) {
          if (PAY.buf[index].vp_confident) {
+            // If an instruction has a confident prediction, it must be eligible
+            assert(PAY.buf[index].vp_eligible);
             // If predicted, prediction must be written into PRF and PRF ready bit must be set
             REN->write(PAY.buf[index].C_phys_reg, PAY.buf[index].predicted_value);
             REN->set_ready(PAY.buf[index].C_phys_reg);
