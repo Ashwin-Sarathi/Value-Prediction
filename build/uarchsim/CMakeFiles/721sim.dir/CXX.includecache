@@ -254,18 +254,6 @@ vector
 
 /mnt/ncsudrive/a/asarath/721/Value-Prediction/721sim/uarchsim/tc.h
 
-/mnt/ncsudrive/a/asarath/721/Value-Prediction/721sim/uarchsim/value_predictor.cc
-value_predictor.h
-/mnt/ncsudrive/a/asarath/721/Value-Prediction/721sim/uarchsim/value_predictor.h
-algorithm
--
-cassert
--
-iostream
--
-cstdio
--
-
 /mnt/ncsudrive/a/asarath/721/Value-Prediction/721sim/uarchsim/value_predictor.h
 inttypes.h
 -

@@ -150,7 +150,7 @@ void pipeline_t::writeback(unsigned int lane_number) {
                bool checkpointed_vpq_tail_phase_bit;
                REN->get_vpq_Checkpoints(PAY.buf[index].branch_ID, checkpointed_vpq_tail, checkpointed_vpq_tail_phase_bit);
                VPU.partialRollbackVPU(checkpointed_vpq_tail, checkpointed_vpq_tail_phase_bit);
-               cout << "ROLLBACK EXIT" << endl;
+               // cout << "ROLLBACK EXIT" << endl;
             }
 
             // Restore the LQ/SQ.
