@@ -382,11 +382,29 @@ pipeline_t::pipeline_t(
 
   fprintf(stats_log, "\n=== VALUE PREDICTOR ============================================================\n\n");
   fprintf(stats_log, "VALUE PREDICTOR = %s\n", (PERFECT_VALUE_PREDICTION ? "perfect" : "stride (Project 4 spec. implementation)"));
+
+  if(VALUE_PREDICTION_ENABLED && !PERFECT_VALUE_PREDICTION){
+          fprintf(stats_log, "    VPQsize           = %u\n", vpq_size);
+          fprintf(stats_log, "    oracleconf        = %u\n", oracle_confidence);
+          fprintf(stats_log, "    # index bits      = %u\n", svp_index_bits);
+          fprintf(stats_log, "    # tag bits        = %u\n", svp_tag_bits);
+          fprintf(stats_log, "    confmax           = %u\n", svp_conf_max);
+          fprintf(stats_log, "    confinc           = %u\n", svp_conf_inc);
+          fprintf(stats_log, "    confdec           = %u\n", svp_conf_dec);
+          fprintf(stats_log, "    replace_stride    = %u\n", svp_replace_stride);
+          fprintf(stats_log, "    replace           = %u\n", svp_replace);
+          fprintf(stats_log, "    predINTALU        = %u\n", svp_predict_int_alu);
+          fprintf(stats_log, "    predFPALU         = %u\n", svp_predict_fp_alu);
+          fprintf(stats_log, "    predLOAD          = %u\n", svp_predict_load);
+          fprintf(stats_log, "    VPQ_full_policy   = %u\n", vpq_full_policy);
+  }
+
+
   fprintf(stats_log, "\nCOST ACCOUNTING\n");
   if (VALUE_PREDICTION_ENABLED) {
-    if (PERFECT_VALUE_PREDICTION) {
+   if (PERFECT_VALUE_PREDICTION) {
       fprintf(stats_log, "  Impossible.\n");
-    }
+    } 
     else {
       int RISCV64_integer_size = 64;
 
@@ -465,19 +483,24 @@ pipeline_t::~pipeline_t()
 
   FetchUnit->output(stats->get_counter("commit_count"), stats->get_counter("cycle_count"), stats_log);
   LSU.dump_stats(stats_log);
+  
   // PRINTING STATS FOR VALUE PREDICTOR
+
+    unsigned long vpmeas_total = vpmeas_ineligible + vpmeas_eligible;
+
     fprintf(stats_log, "VPU MEASUREMENTS-----------------------------------\n");
 
-    fprintf(stats_log, "vpmeas_ineligible\t\t:\t%lu\n", vpmeas_ineligible);
-    fprintf(stats_log, "\tvpmeas_ineligible_type:\t%lu\n", vpmeas_ineligible_type);
-    fprintf(stats_log, "\tvpmeas_ineligible_drop:\t%lu\n\n", vpmeas_ineligible_drop);
+    fprintf(stats_log, "vpmeas_ineligible         :    %lu (%5.2f%%)\n", vpmeas_ineligible, 100.0 * vpmeas_ineligible / vpmeas_total);
+    fprintf(stats_log, "   vpmeas_ineligible_type :    %lu (%5.2f%%)\n", vpmeas_ineligible_type, 100.0 * vpmeas_ineligible_type / vpmeas_total);
+    fprintf(stats_log, "   vpmeas_ineligible_drop :    %lu (%5.2f%%)\n\n", vpmeas_ineligible_drop, 100.0 * vpmeas_ineligible_drop / vpmeas_total);
 
-    fprintf(stats_log, "vpmeas_eligible\t\t:\t%lu\n", vpmeas_eligible);
-    fprintf(stats_log, "\tvpmeas_miss:\t%lu\n", vpmeas_miss);
-    fprintf(stats_log, "\tvpmeas_conf_corr:\t%lu\n", vpmeas_conf_corr);
-    fprintf(stats_log, "\tvpmeas_conf_incorr:\t%lu\n", vpmeas_conf_incorr);
-    fprintf(stats_log, "\tvpmeas_unconf_corr:\t%lu\n", vpmeas_unconf_corr);
-    fprintf(stats_log, "\tvpmeas_unconf_incorr:\t%lu\n", vpmeas_unconf_incorr);
+    fprintf(stats_log, "vpmeas_eligible           :    %lu (%5.2f%%)\n", vpmeas_eligible, 100.0 * vpmeas_eligible / vpmeas_total);
+    fprintf(stats_log, "   vpmeas_miss            :    %lu (%5.2f%%)\n", vpmeas_miss, 100.0 * vpmeas_miss / vpmeas_total);
+    fprintf(stats_log, "   vpmeas_conf_corr       :    %lu (%5.2f%%)\n", vpmeas_conf_corr, 100.0 * vpmeas_conf_corr / vpmeas_total);
+    fprintf(stats_log, "   vpmeas_conf_incorr     :    %lu (%5.2f%%)\n", vpmeas_conf_incorr, 100.0 * vpmeas_conf_incorr / vpmeas_total);
+    fprintf(stats_log, "   vpmeas_unconf_corr     :    %lu (%5.2f%%)\n", vpmeas_unconf_corr, 100.0 * vpmeas_unconf_corr / vpmeas_total);
+    fprintf(stats_log, "   vpmeas_unconf_incorr   :    %lu (%5.2f%%)\n", vpmeas_unconf_incorr, 100.0 * vpmeas_unconf_incorr / vpmeas_total);
+
 
   #ifdef RISCV_MICRO_DEBUG
     fclose(this->fetch_log    );

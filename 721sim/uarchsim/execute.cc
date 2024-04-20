@@ -337,7 +337,7 @@ void pipeline_t::load_replay() {
                   else {
                      PAY.buf[index].vp_incorrect = true;
                      assert(!PAY.buf[index].vp_correct);
-                     assert(PAY.buf[index].vp_unconfident);
+                     assert(PAY.buf[index].vp_unconfident || PAY.buf[index].vp_miss);
                   }
                }
                else {

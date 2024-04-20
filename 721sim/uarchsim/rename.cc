@@ -287,7 +287,7 @@ void pipeline_t::rename2() {
          else {
             // cout << "ENQUEUED: " << test_counter << endl;
             PAY.buf[index].vpq_index = VPU.enqueue(PAY.buf[index].pc);
-            test_counter ++;
+            // test_counter ++;
          }
 
          uint64_t predicted_value;

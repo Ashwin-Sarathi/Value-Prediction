@@ -483,4 +483,3 @@ bool pipeline_t::execute_csr() {
 
    return(exception);
 }
-

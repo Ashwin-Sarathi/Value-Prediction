@@ -73,8 +73,6 @@ class svp_vpq {
         bool isEligible(uint64_t pc, bool eligibility, bool destination_register, fu_type instruction_type, bool load);
         int getOraclePrediction(uint64_t pc, uint64_t& predicted_value, uint64_t actual_value);
         bool comparePredictedAndComputed(uint64_t predicted_value, uint64_t computed_value);
-        uint64_t extractIndexFromVPQEntry(int vpq_index);
-        uint64_t extractTagfromVPQEntry(int vpq_index);
 };
 
 #endif // VALUE_PREDICTOR_H

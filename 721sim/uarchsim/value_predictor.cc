@@ -78,7 +78,7 @@ void svp_vpq::trainOrReplace(uint64_t pc, uint64_t value) {
 }
 
 unsigned int svp_vpq::countVPQInstances(uint64_t pc) {
-    cout << "Counting" << endl;
+    // cout << "Counting" << endl;
     unsigned int count = 0;
     uint64_t temp_vpq_head = vpq_head;
     bool temp_vpq_head_phase_bit = vpq_head_phase_bit;
@@ -270,27 +270,40 @@ void svp_vpq::fullSquashVPU() {
 }
 
 void svp_vpq::partialRollbackVPU(uint64_t checkpointed_tail, bool checkpointed_tail_phase_bit) {
-    uint64_t svp_index = 0;
-    uint64_t svp_tag = 0;
-    
-    do {
-        svp_index = extractIndexFromVPQEntry(vpq_tail);
-        svp_tag = extractTagfromVPQEntry(vpq_tail);
-        if (svp_table[svp_index].tag == svp_tag) {
-            svp_table[svp_index].instance --;
-            assert(svp_table[svp_index].instance >= 0);
-        }
-
-        if (vpq_tail >= 0) {
-            vpq_tail --;
-        }
-        else {
-            vpq_tail = (vpq_size - 1);
-            vpq_tail_phase_bit = !vpq_tail_phase_bit;
-        }
+    if ((checkpointed_tail == vpq_tail) && (checkpointed_tail_phase_bit == vpq_tail_phase_bit)) {
+        return;  // No rollback needed as the states match
     }
-    while (vpq_tail != checkpointed_tail);
 
+    // Full squash if tail matches head with the same phase bit
+    if ((checkpointed_tail == vpq_head) && (checkpointed_tail_phase_bit == vpq_head_phase_bit)) {
+        fullSquashVPU();
+        return;
+    }
+
+    // Rollback the VPQ to the checkpointed tail
+    while ((vpq_tail != checkpointed_tail) || (vpq_tail_phase_bit != checkpointed_tail_phase_bit)) {
+        // Decrement vpq_tail before modifying to ensure the current tail entry is correctly handled
+        if (vpq_tail == 0) {
+            vpq_tail = vpq_size - 1;
+            vpq_tail_phase_bit = !vpq_tail_phase_bit;  // Toggle phase bit on wrap-around
+        } else {
+            vpq_tail--;
+        }
+
+        // Invalidate the current tail entry (pointed at by the decremented vpq_tail)
+        uint64_t index = vpq_queue[vpq_tail].PCindex;
+        uint64_t tag = vpq_queue[vpq_tail].PCtag;
+        if (svp_table[index].tag == tag && svp_table[index].instance > 0) {
+            svp_table[index].instance--;
+        }
+
+        // Optionally clear the VPQ entry if needed
+        vpq_queue[vpq_tail].pc = 0;  // Clear the pc to indicate it's no longer valid
+        vpq_queue[vpq_tail].PCtag = 0;  // Clear additional fields as needed
+        vpq_queue[vpq_tail].PCindex = 0;
+    }
+
+    // Confirm phase bit matches the checkpointed state after rollback
     assert(vpq_tail_phase_bit == checkpointed_tail_phase_bit);
 }
 
@@ -367,17 +380,4 @@ int svp_vpq::getOraclePrediction(uint64_t pc, uint64_t& predicted_value, uint64_
 
 bool svp_vpq::comparePredictedAndComputed(uint64_t predicted_value, uint64_t computed_value) {
     return (predicted_value == computed_value);
-}
-
-uint64_t svp_vpq::extractIndexFromVPQEntry(int vpq_index) {
-    uint64_t temp_pc = vpq_queue[vpq_index].pc;
-    uint64_t mask = (1ULL << svp_index_bits) - 1;
-    uint64_t index = temp_pc & mask;
-    return index;
-}
-
-uint64_t svp_vpq::extractTagfromVPQEntry(int vpq_index) {
-    uint64_t temp_pc = vpq_queue[vpq_index].pc;
-    uint64_t tag = temp_pc >> svp_index_bits;
-    return tag;
 }

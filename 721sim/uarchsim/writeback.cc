@@ -1,5 +1,6 @@
 #include "pipeline.h"
-
+#include <iostream>
+using namespace std;
 //fixed
 
 
@@ -142,12 +143,14 @@ void pipeline_t::writeback(unsigned int lane_number) {
             // FIX_ME #15c END
             //********************************************
 
-            // Restore VPQ and SVP
-            if (VALUE_PREDICTION_ENABLED && PAY.buf[index].vp_eligible) {
+            // Restore VPQ and SVP by partial VPQ rollback
+            // cout << "MISPREDICT DETECTED AND VALUE PREDICT: " << PAY.buf[index].vp_confident  << endl;
+            if (VALUE_PREDICTION_ENABLED && !PERFECT_VALUE_PREDICTION && !oracle_confidence) {
                uint64_t checkpointed_vpq_tail;
                bool checkpointed_vpq_tail_phase_bit;
                REN->get_vpq_Checkpoints(PAY.buf[index].branch_ID, checkpointed_vpq_tail, checkpointed_vpq_tail_phase_bit);
                VPU.partialRollbackVPU(checkpointed_vpq_tail, checkpointed_vpq_tail_phase_bit);
+               // cout << "ROLLBACK EXIT" << endl;
             }
 
             // Restore the LQ/SQ.
@@ -204,11 +207,12 @@ void pipeline_t::writeback(unsigned int lane_number) {
                      PAY.buf[index].vp_incorrect = true;
                      assert(!PAY.buf[index].vp_correct);
                      assert(!PAY.buf[index].vp_unconfident);
+                     assert(!PAY.buf[index].vp_miss);
                   }
                   else {
                      PAY.buf[index].vp_incorrect = true;
                      assert(!PAY.buf[index].vp_correct);
-                     assert(PAY.buf[index].vp_unconfident);
+                     assert(PAY.buf[index].vp_unconfident || PAY.buf[index].vp_miss);
                   }
                }
                else {
