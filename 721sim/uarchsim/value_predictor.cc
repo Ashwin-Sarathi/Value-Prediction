@@ -270,56 +270,40 @@ void svp_vpq::fullSquashVPU() {
 }
 
 void svp_vpq::partialRollbackVPU(uint64_t checkpointed_tail, bool checkpointed_tail_phase_bit) {
-    // We start rolling back from 1 slot behind VPQ tail because tail always points to the NEXT FREE slot in the VPQ
-    uint64_t vpq_index = 0;
-    uint64_t vpq_tag = 0;
-
-    // Various possible cases in a VPU rollback
-    // If checkpointed tail and phase matches actual tail, then no rollback
     if ((checkpointed_tail == vpq_tail) && (checkpointed_tail_phase_bit == vpq_tail_phase_bit)) {
-        return;
+        return;  // No rollback needed as the states match
     }
 
-    // I'm just testing this to see if it can ever occur, because I can't imagine a scenario
-    if ((checkpointed_tail == vpq_tail) && (checkpointed_tail_phase_bit != vpq_tail_phase_bit)) {
-        cout << "HEAD: " << vpq_head << endl;
-        cout << "HEAD PHASE: " << vpq_head_phase_bit << endl;
-        cout << "TAIL: " << vpq_tail << endl;
-        cout << "TAIL PHASE BIT: " << vpq_tail_phase_bit << endl;
-        cout << "CHECKPOINT TAIL: " << checkpointed_tail << endl;
-        cout << "CHECKPOINTED TAIL PHASE: " << checkpointed_tail_phase_bit << endl;
-        assert(1);
-    }
-
-    // If the tail and phase matches actual head, then it is essentially a full squash
+    // Full squash if tail matches head with the same phase bit
     if ((checkpointed_tail == vpq_head) && (checkpointed_tail_phase_bit == vpq_head_phase_bit)) {
         fullSquashVPU();
         return;
     }
 
-    // if ((checkpointed_tail_phase_bit == vpq_tail_phase_bit) && (checkpointed_tail > )) {
-
-    // }
-    
-    while (vpq_tail != checkpointed_tail) {
-        vpq_index = vpq_queue[vpq_tail - 1].PCindex;
-        vpq_tag = vpq_queue[vpq_tail - 1].PCtag;
-        if (svp_table[vpq_index].tag == vpq_tag) {
-            svp_table[vpq_index].instance --;
-            assert(svp_table[vpq_index].instance >= 0);
+    // Rollback the VPQ to the checkpointed tail
+    while ((vpq_tail != checkpointed_tail) || (vpq_tail_phase_bit != checkpointed_tail_phase_bit)) {
+        // Decrement vpq_tail before modifying to ensure the current tail entry is correctly handled
+        if (vpq_tail == 0) {
+            vpq_tail = vpq_size - 1;
+            vpq_tail_phase_bit = !vpq_tail_phase_bit;  // Toggle phase bit on wrap-around
+        } else {
+            vpq_tail--;
         }
 
-        if (vpq_tail > 0) {
-            vpq_tail --;
+        // Invalidate the current tail entry (pointed at by the decremented vpq_tail)
+        uint64_t index = vpq_queue[vpq_tail].PCindex;
+        uint64_t tag = vpq_queue[vpq_tail].PCtag;
+        if (svp_table[index].tag == tag && svp_table[index].instance > 0) {
+            svp_table[index].instance--;
         }
-        else {
-            assert(vpq_tail == 0);
-            vpq_tail = (vpq_size - 1);
-            vpq_tail_phase_bit = !vpq_tail_phase_bit;
-        }
+
+        // Optionally clear the VPQ entry if needed
+        vpq_queue[vpq_tail].pc = 0;  // Clear the pc to indicate it's no longer valid
+        vpq_queue[vpq_tail].PCtag = 0;  // Clear additional fields as needed
+        vpq_queue[vpq_tail].PCindex = 0;
     }
-    
 
+    // Confirm phase bit matches the checkpointed state after rollback
     assert(vpq_tail_phase_bit == checkpointed_tail_phase_bit);
 }
 
@@ -336,7 +320,8 @@ int svp_vpq::getRealPrediction(uint64_t pc, uint64_t& predicted_value) {
             if (svp_table[index].confidence == svp_conf_max) {
                 predicted_value = svp_table[index].last_value + (svp_table[index].stride * svp_table[index].instance);  
                 return 2;                            // Tag match and max confidence
-            }                   
+            }        
+            predicted_value = svp_table[index].last_value + (svp_table[index].stride * svp_table[index].instance);           
             return 1;                                // Tag match but unconfident
         }
 

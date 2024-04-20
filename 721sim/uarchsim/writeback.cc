@@ -186,41 +186,57 @@ void pipeline_t::writeback(unsigned int lane_number) {
 
       //////////////////////////////////////////////////////////////////////////////////////////////////////////
       // Compare predicted value from the SVP to the computed value in case a prediction has been made
-      // 1. In case of perfect prediction or oracle prediction, it is impossible for the prediction to be 
-      //    wrong so this comparison can be asserted to be correct. So we don't bother checking for these cases.
+      // 1. The checking of a prediction has to be made only in real value prediction modes. So, we ensure we 
+      //    are not in perfect mode.
+      // 3. We assert that for an instruction that is being value checked, it is being marked either as 
+      //    confident, unconfident or a miss.
+      // 4. Computed value is pushed into the VPQ
       // 2. In case of real prediction, the comparison has to be done and if:
       //    a. Values match - Do nothing
       //    b. Values do not match - Post value misprediction in AL entry
-      //    c. Optionally can also initiate immediate recovery in case we are implementing VR-3, VR-4 or VR-5
-      // 3. Computed value is pushed into the VPQ
+      //    c. Optionally can also initiate immediate recovery in case we are implementing VR-3, VR-4 or VR-5 
       //////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-         if (VALUE_PREDICTION_ENABLED && !PERFECT_VALUE_PREDICTION && PAY.buf[index].vp_eligible) {
-            assert(PAY.buf[index].vp_confident || PAY.buf[index].vp_unconfident || PAY.buf[index].vp_miss);
-            VPU.addComputedValueToVPQ(PAY.buf[index].vpq_index, PAY.buf[index].C_value.dw);
-            if (!oracle_confidence) {
-               // Only in the case of confident values, they are written into the PRF
-               if (!VPU.comparePredictedAndComputed(PAY.buf[index].predicted_value, PAY.buf[index].C_value.dw)) {
-                  if (PAY.buf[index].vp_confident) {
-                     // Sets the value mispredict flag in the AL in case the prediction is incorrect
-                     REN->set_value_misprediction(PAY.buf[index].AL_index);
-                     PAY.buf[index].vp_incorrect = true;
-                     assert(!PAY.buf[index].vp_correct);
-                     assert(!PAY.buf[index].vp_unconfident);
-                     assert(!PAY.buf[index].vp_miss);
-                  }
-                  else {
-                     PAY.buf[index].vp_incorrect = true;
-                     assert(!PAY.buf[index].vp_correct);
-                     assert(PAY.buf[index].vp_unconfident || PAY.buf[index].vp_miss);
-                  }
-               }
-               else {
+      if (VALUE_PREDICTION_ENABLED && !PERFECT_VALUE_PREDICTION && PAY.buf[index].vp_eligible) {
+         assert(PAY.buf[index].vp_confident || PAY.buf[index].vp_unconfident || PAY.buf[index].vp_miss);
+
+         VPU.addComputedValueToVPQ(PAY.buf[index].vpq_index, PAY.buf[index].C_value.dw);
+
+         // Value comparison applies only in case of real confidence
+         if (!oracle_confidence) {
+            if (PAY.buf[index].vp_confident) {
+               assert(!PAY.buf[index].vp_unconfident);
+               assert(!PAY.buf[index].vp_miss);
+
+               if (VPU.comparePredictedAndComputed(PAY.buf[index].predicted_value, PAY.buf[index].C_value.dw)) {
                   PAY.buf[index].vp_correct = true;
                   assert(!PAY.buf[index].vp_incorrect);
                }
+               else {
+                  // Sets the value mispredict flag in the AL in case the prediction is incorrect
+                  REN->set_value_misprediction(PAY.buf[index].AL_index);
+                  PAY.buf[index].vp_incorrect = true;
+                  assert(!PAY.buf[index].vp_correct);
+               }
+            }
+            else if (PAY.buf[index].vp_unconfident) {
+               assert(!PAY.buf[index].vp_confident);
+               assert(!PAY.buf[index].vp_miss);
+
+               if (VPU.comparePredictedAndComputed(PAY.buf[index].predicted_value, PAY.buf[index].C_value.dw)) {
+                  PAY.buf[index].vp_correct = true;
+                  assert(!PAY.buf[index].vp_incorrect);
+               }
+               else {
+                  PAY.buf[index].vp_incorrect = true;
+                  assert(!PAY.buf[index].vp_correct);
+               }
+            }
+            else {
+               assert(PAY.buf[index].vp_miss);
             }
          }
+      }
 
       //////////////////////////////////////////////////////////////////////////////////////////////////////////
       // FIX_ME #16
