@@ -227,6 +227,11 @@ uint64_t svp_vpq::getComputedValue(uint64_t index) {
     return vpq_queue[index].computed_value; 
 }
 
+void svp_vpq::getHeadAtRetire(uint64_t &pc, uint64_t &value) {
+    pc = vpq_queue[vpq_head].pc;
+    value = vpq_queue[vpq_head].computed_value;
+}
+
 void svp_vpq::printVPQStatus() {
 
     fprintf(stdout, "VPQ State:\n");

@@ -408,11 +408,11 @@ pipeline_t::pipeline_t(
       fprintf(stats_log, "    -------------------------\n");
       fprintf(stats_log, "    bits/VPQ entry: %d\n", bits_per_vpq_entry);
 
-      int svp_cost = (1UL << svp_tag_bits) * (bits_per_svp_entry);
+      int svp_cost = (1UL << svp_index_bits) * (bits_per_svp_entry);
       int vpq_cost = vpq_size * bits_per_vpq_entry;
       int total_cost_bits = svp_cost + vpq_cost;
       int total_cost_bytes = total_cost_bits/8;
-      fprintf(stats_log, "  Total storage cost (bits) = %d (%lu SVP entries x %d bits/SVP entry) + %d (%d VPQ entries x %d bits/VPQ entry) = %d bits\n", svp_cost, (1UL << svp_tag_bits), bits_per_svp_entry, vpq_cost, vpq_size, bits_per_vpq_entry, total_cost_bits);
+      fprintf(stats_log, "  Total storage cost (bits) = %d (%lu SVP entries x %d bits/SVP entry) + %d (%d VPQ entries x %d bits/VPQ entry) = %d bits\n", svp_cost, (1UL << svp_index_bits), bits_per_svp_entry, vpq_cost, vpq_size, bits_per_vpq_entry, total_cost_bits);
       fprintf(stats_log, "  Total storage cost (bytes) = %d B\n", total_cost_bytes);
     }
   }
