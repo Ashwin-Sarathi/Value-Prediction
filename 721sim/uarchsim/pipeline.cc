@@ -399,41 +399,43 @@ pipeline_t::pipeline_t(
           fprintf(stats_log, "    VPQ_full_policy   = %u\n", vpq_full_policy);
   }
 
+// Define RISC-V 64-bit size
+const int RISCV64_integer_size = 64;
+const int svp_entries = 1 << svp_index_bits; 
+const int svp_bits_per_entry = svp_tag_bits + static_cast<int>(ceil(log2(svp_conf_max + 1))) +
+                               2 * RISCV64_integer_size + static_cast<int>(ceil(log2(vpq_size)));
 
-  fprintf(stats_log, "\nCOST ACCOUNTING\n");
-  if (VALUE_PREDICTION_ENABLED) {
-   if (PERFECT_VALUE_PREDICTION) {
-      fprintf(stats_log, "  Impossible.\n");
-    } 
-    else {
-      int RISCV64_integer_size = 64;
+const int vpq_bits_per_entry = svp_tag_bits + svp_index_bits + RISCV64_integer_size;
 
-      int bits_per_svp_entry = svp_tag_bits + (uint64_t)ceil(log2((double)(svp_conf_max+1))) + (2 * RISCV64_integer_size) + (uint64_t)ceil(log2((double)vpq_size));
-      fprintf(stats_log, "  One SVP entry:\n");
-      fprintf(stats_log, "    tag\t:  %d bits // num_tag_bits\n", svp_tag_bits);
-      fprintf(stats_log, "    conf\t:  %lu bits // formula: (uint64_t)ceil(log2((double)(confmax+1)))\n", (uint64_t)ceil(log2((double)(svp_conf_max+1))));
-      fprintf(stats_log, "    retired_value\t:  %d bits //RISCV64 integer size.\n", RISCV64_integer_size);
-      fprintf(stats_log, "    stride\t:  %d bits //RISCV64 integer size. Competition opportunity: truncate stride to far fewer bits based on stride distribution of stride-predictable instructions.\n", RISCV64_integer_size);
-      fprintf(stats_log, "    instance ctr\t:  %lu bits //formula: (uint64_t)ceil(log2((double)VPQsize))\n", (uint64_t)ceil(log2((double)vpq_size)));
-      fprintf(stats_log, "    -------------------------\n");
-      fprintf(stats_log, "    bits/SVP entry: %d", bits_per_svp_entry);
+const int svp_storage_cost = svp_entries * svp_bits_per_entry;
+const int vpq_storage_cost = vpq_size * vpq_bits_per_entry;
+const int total_storage_cost_bits = svp_storage_cost + vpq_storage_cost;
+const int total_storage_cost_bytes = total_storage_cost_bits / 8;
 
-      int bits_per_vpq_entry = svp_tag_bits + svp_index_bits + RISCV64_integer_size;
-      fprintf(stats_log, "  One VPQ entry:\n");
-      fprintf(stats_log, "    PC_tag\t: %d bits  // num_tag_bits\n", svp_tag_bits);
-      fprintf(stats_log, "    PC_index\t: %d bits  // num_tag_bits\n", svp_index_bits);
-      fprintf(stats_log, "    value\t: %d bits  // num_tag_bits\n", RISCV64_integer_size);
-      fprintf(stats_log, "    -------------------------\n");
-      fprintf(stats_log, "    bits/VPQ entry: %d\n", bits_per_vpq_entry);
+fprintf(stats_log, "\nCOST ACCOUNTING\n");
+if (VALUE_PREDICTION_ENABLED && !PERFECT_VALUE_PREDICTION) {
+    fprintf(stats_log, "  One SVP entry:\n");
+    fprintf(stats_log, "    tag           : %2d bits // num_tag_bits\n", svp_tag_bits);
+    fprintf(stats_log, "    conf          : %2lu bits // ceil(log2(confmax+1))\n", static_cast<unsigned long>(ceil(log2(svp_conf_max + 1))));
+    fprintf(stats_log, "    retired_value : %2d bits // RISCV64 integer size\n", RISCV64_integer_size);
+    fprintf(stats_log, "    stride        : %2d bits // RISCV64 integer size\n", RISCV64_integer_size);
+    fprintf(stats_log, "    instance ctr  : %2lu bits // ceil(log2(VPQsize))\n", static_cast<unsigned long>(ceil(log2(vpq_size))));
+    fprintf(stats_log, "    -------------------------\n");
+    fprintf(stats_log, "    bits/SVP entry: %d bits\n", svp_bits_per_entry);
 
-      int svp_cost = (1UL << svp_tag_bits) * (bits_per_svp_entry);
-      int vpq_cost = vpq_size * bits_per_vpq_entry;
-      int total_cost_bits = svp_cost + vpq_cost;
-      int total_cost_bytes = total_cost_bits/8;
-      fprintf(stats_log, "  Total storage cost (bits) = %d (%lu SVP entries x %d bits/SVP entry) + %d (%d VPQ entries x %d bits/VPQ entry) = %d bits\n", svp_cost, (1UL << svp_tag_bits), bits_per_svp_entry, vpq_cost, vpq_size, bits_per_vpq_entry, total_cost_bits);
-      fprintf(stats_log, "  Total storage cost (bytes) = %d B\n", total_cost_bytes);
-    }
-  }
+    fprintf(stats_log, "  One VPQ entry:\n");
+    fprintf(stats_log, "    PC_tag        : %2d bits // num_tag_bits\n", svp_tag_bits);
+    fprintf(stats_log, "    PC_index      : %2d bits // num_index_bits\n", svp_index_bits);
+    fprintf(stats_log, "    value         : %2d bits // RISCV64 integer size\n", RISCV64_integer_size);
+    fprintf(stats_log, "    -------------------------\n");
+    fprintf(stats_log, "    bits/VPQ entry: %d bits\n", vpq_bits_per_entry);
+
+    fprintf(stats_log, "  Total storage cost (bits) = %d (%d SVP entries x %d bits/SVP entry) + %d (%d VPQ entries x %d bits/VPQ entry) = %d bits\n",
+            svp_storage_cost, svp_entries, svp_bits_per_entry, vpq_storage_cost, vpq_size, vpq_bits_per_entry, total_storage_cost_bits);
+    fprintf(stats_log, "  Total storage cost (bytes) = %d B (%.2f KB)\n",
+            total_storage_cost_bytes, total_storage_cost_bytes / 1024.0);
+}
+
 
   fprintf(stats_log, "\n=== INTERNAL SIMULATOR STRUCTURES ===============================================\n\n");
 

@@ -144,6 +144,8 @@ typedef struct {
 
    uint64_t predicted_value;                  // If confident, prediction is available
 
+   uint64_t unconfident_predicted_value; 
+
    bool in_vpq;
 
    // Flags valuable for measuring VPU metrics in retirement
