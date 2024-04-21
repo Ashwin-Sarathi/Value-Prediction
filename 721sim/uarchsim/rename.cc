@@ -271,8 +271,9 @@ void pipeline_t::rename2() {
             assert(VPU.isEligible(PAY.buf[index].pc, PAY.buf[index].checkpoint, PAY.buf[index].C_valid, PAY.buf[index].fu, IS_LOAD(PAY.buf[index].flags)));
          }
 
-         // If VPQ full and need entries for VP-eligible instructions in bundle => (vpq_full_policy == 0): stall bundle, (vpq_full_policy == 1): don’t allocate VPQ entries
-         // If vpq_full_policy is 1 and VPU is full, don't allocate
+         // If VPQ full and need entries for VP-eligible instructions in bundle: 
+         //    1. (vpq_full_policy == 0): stall bundle if VPQ is full
+         //    2. (vpq_full_policy == 1): don’t allocate VPQ entries if VPQ is full
          if (VPU.isVPQFull()) {
             if (vpq_full_policy) {
                // cout << "hits here" << endl;

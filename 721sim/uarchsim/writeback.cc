@@ -16,6 +16,60 @@ void pipeline_t::writeback(unsigned int lane_number) {
       index = Execution_Lanes[lane_number].wb.index;
 
       //////////////////////////////////////////////////////////////////////////////////////////////////////////
+      // Compare predicted value from the SVP to the computed value in case a prediction has been made
+      // 1. The checking of a prediction has to be made only in real value prediction modes. So, we ensure we 
+      //    are not in perfect mode.
+      // 2. We assert that for an instruction that is being value predicted, it is being marked either as 
+      //    confident, unconfident or a miss.
+      // 3. Computed value is pushed into the VPQ in any real value prediction mode.
+      // 4. In case of real prediction, the comparison has to be done and if:
+      //    a. Values match - Do nothing
+      //    b. Values do not match - Post value misprediction in AL entry
+      //    c. Optionally can also initiate immediate recovery in case we are implementing VR-3, VR-4 or VR-5 
+      //////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+      if (VALUE_PREDICTION_ENABLED && !PERFECT_VALUE_PREDICTION && PAY.buf[index].vp_eligible) {
+         assert(PAY.buf[index].vp_confident || PAY.buf[index].vp_unconfident || PAY.buf[index].vp_miss);
+
+         VPU.addComputedValueToVPQ(PAY.buf[index].vpq_index, PAY.buf[index].C_value.dw);
+
+         // Value comparison applies only in case of real confidence
+         if (!oracle_confidence) {
+            if (PAY.buf[index].vp_confident) {
+               assert(!PAY.buf[index].vp_unconfident);
+               assert(!PAY.buf[index].vp_miss);
+
+               if (VPU.comparePredictedAndComputed(PAY.buf[index].predicted_value, PAY.buf[index].C_value.dw)) {
+                  PAY.buf[index].vp_correct = true;
+                  assert(!PAY.buf[index].vp_incorrect);
+               }
+               else {
+                  // Sets the value mispredict flag in the AL in case the prediction is incorrect
+                  REN->set_value_misprediction(PAY.buf[index].AL_index);
+                  PAY.buf[index].vp_incorrect = true;
+                  assert(!PAY.buf[index].vp_correct);
+               }
+            }
+            else if (PAY.buf[index].vp_unconfident) {
+               assert(!PAY.buf[index].vp_confident);
+               assert(!PAY.buf[index].vp_miss);
+
+               if (VPU.comparePredictedAndComputed(PAY.buf[index].predicted_value, PAY.buf[index].C_value.dw)) {
+                  PAY.buf[index].vp_correct = true;
+                  assert(!PAY.buf[index].vp_incorrect);
+               }
+               else {
+                  PAY.buf[index].vp_incorrect = true;
+                  assert(!PAY.buf[index].vp_correct);
+               }
+            }
+            else {
+               assert(PAY.buf[index].vp_miss);
+            }
+         }
+      }
+
+      //////////////////////////////////////////////////////////////////////////////////////////////////////////
       // FIX_ME #15
       // Resolve branches.
       //
@@ -181,60 +235,6 @@ void pipeline_t::writeback(unsigned int lane_number) {
 
             // Rollback PAY to the point of the branch.
             PAY.rollback(index);
-         }
-      }
-
-      //////////////////////////////////////////////////////////////////////////////////////////////////////////
-      // Compare predicted value from the SVP to the computed value in case a prediction has been made
-      // 1. The checking of a prediction has to be made only in real value prediction modes. So, we ensure we 
-      //    are not in perfect mode.
-      // 3. We assert that for an instruction that is being value checked, it is being marked either as 
-      //    confident, unconfident or a miss.
-      // 4. Computed value is pushed into the VPQ
-      // 2. In case of real prediction, the comparison has to be done and if:
-      //    a. Values match - Do nothing
-      //    b. Values do not match - Post value misprediction in AL entry
-      //    c. Optionally can also initiate immediate recovery in case we are implementing VR-3, VR-4 or VR-5 
-      //////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-      if (VALUE_PREDICTION_ENABLED && !PERFECT_VALUE_PREDICTION && PAY.buf[index].vp_eligible) {
-         assert(PAY.buf[index].vp_confident || PAY.buf[index].vp_unconfident || PAY.buf[index].vp_miss);
-
-         VPU.addComputedValueToVPQ(PAY.buf[index].vpq_index, PAY.buf[index].C_value.dw);
-
-         // Value comparison applies only in case of real confidence
-         if (!oracle_confidence) {
-            if (PAY.buf[index].vp_confident) {
-               assert(!PAY.buf[index].vp_unconfident);
-               assert(!PAY.buf[index].vp_miss);
-
-               if (VPU.comparePredictedAndComputed(PAY.buf[index].predicted_value, PAY.buf[index].C_value.dw)) {
-                  PAY.buf[index].vp_correct = true;
-                  assert(!PAY.buf[index].vp_incorrect);
-               }
-               else {
-                  // Sets the value mispredict flag in the AL in case the prediction is incorrect
-                  REN->set_value_misprediction(PAY.buf[index].AL_index);
-                  PAY.buf[index].vp_incorrect = true;
-                  assert(!PAY.buf[index].vp_correct);
-               }
-            }
-            else if (PAY.buf[index].vp_unconfident) {
-               assert(!PAY.buf[index].vp_confident);
-               assert(!PAY.buf[index].vp_miss);
-
-               if (VPU.comparePredictedAndComputed(PAY.buf[index].predicted_value, PAY.buf[index].C_value.dw)) {
-                  PAY.buf[index].vp_correct = true;
-                  assert(!PAY.buf[index].vp_incorrect);
-               }
-               else {
-                  PAY.buf[index].vp_incorrect = true;
-                  assert(!PAY.buf[index].vp_correct);
-               }
-            }
-            else {
-               assert(PAY.buf[index].vp_miss);
-            }
          }
       }
 
