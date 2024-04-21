@@ -55,7 +55,16 @@ void svp_vpq::trainOrReplace(uint64_t pc, uint64_t value) {
                 // Only update stride if confidence is less than or equal to the replace_stride threshold
                 svp_table[index].stride = new_stride;
             }
-            svp_table[index].confidence = (svp_conf_dec == 0) ? 0 : max(svp_table[index].confidence - svp_conf_dec, 0u);
+            //svp_table[index].confidence = (svp_conf_dec == 0) ? 0 : max(svp_table[index].confidence - svp_conf_dec, 0u);
+            if (svp_conf_dec == 0) {
+                svp_table[index].confidence = 0;  // Reset confidence to 0 if decrement is set to 0
+            } else {
+                if (svp_table[index].confidence <= svp_conf_dec) {
+                    svp_table[index].confidence = 0;  
+                } else {
+                    svp_table[index].confidence -= svp_conf_dec;  
+                }
+            }
         }
         svp_table[index].last_value = value;
         // Decrement the instance counter
