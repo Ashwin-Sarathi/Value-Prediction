@@ -499,45 +499,45 @@ bool fetchunit_t::fetch2(pipeline_register DECODE[]) {
       index = FETCH2[pos].index;
 
       if (PAY->buf[index].branch) {
-	 // Push an entry into the branch queue.
-	 // This merely allocates the entry; below, we set the entry's contents.
-	 bq.push(pred_tag, pred_tag_phase);
+         // Push an entry into the branch queue.
+         // This merely allocates the entry; below, we set the entry's contents.
+         bq.push(pred_tag, pred_tag_phase);
 
-	 // Merge the pred_tag and pred_tag_phase into a single pred_tag, and assign it to the instruction.
-	 PAY->buf[index].pred_tag = ((pred_tag << 1) | (pred_tag_phase ? 1 : 0));
+         // Merge the pred_tag and pred_tag_phase into a single pred_tag, and assign it to the instruction.
+         PAY->buf[index].pred_tag = ((pred_tag << 1) | (pred_tag_phase ? 1 : 0));
 
-	 //////////////////////////////////////////////
-	 // Set fields in the new branch queue entry.
-	 //////////////////////////////////////////////
+         //////////////////////////////////////////////
+         // Set fields in the new branch queue entry.
+         //////////////////////////////////////////////
 
-	 // The type of branch.
-	 bq.bq[pred_tag].branch_type = PAY->buf[index].branch_type;
+         // The type of branch.
+         bq.bq[pred_tag].branch_type = PAY->buf[index].branch_type;
 
-	 // Information about the fetch bundle that contains this branch.
-	 bq.bq[pred_tag].fetch_pc = fetch2_status.pc;  // Start PC of the fetch bundle that contains this branch.
-	 if (PAY->buf[index].branch_type == BTB_BRANCH) {
-	    bq.bq[pred_tag].fetch_cbID_in_bundle = fetch_cbID_in_bundle;  // This conditional branch's ID in the fetch bundle: 0 (first cb), 1 (second cb), etc.
-	    fetch_cbID_in_bundle++;  // Increment the ID for the next conditional branch in the fetch bundle.
-         }
-         else {
-	    bq.bq[pred_tag].fetch_cbID_in_bundle = 0;
-         }
+         // Information about the fetch bundle that contains this branch.
+         bq.bq[pred_tag].fetch_pc = fetch2_status.pc;  // Start PC of the fetch bundle that contains this branch.
+         if (PAY->buf[index].branch_type == BTB_BRANCH) {
+            bq.bq[pred_tag].fetch_cbID_in_bundle = fetch_cbID_in_bundle;  // This conditional branch's ID in the fetch bundle: 0 (first cb), 1 (second cb), etc.
+            fetch_cbID_in_bundle++;  // Increment the ID for the next conditional branch in the fetch bundle.
+            }
+            else {
+            bq.bq[pred_tag].fetch_cbID_in_bundle = 0;
+            }
 
-	 // Initialize the misp. flag to indicate, as far as we know at this point, the branch is not mispredicted.
-	 bq.bq[pred_tag].misp = false;
+         // Initialize the misp. flag to indicate, as far as we know at this point, the branch is not mispredicted.
+         bq.bq[pred_tag].misp = false;
 
-	 // Record the prediction.
-	 taken = (PAY->buf[index].next_pc != INCREMENT_PC(PAY->buf[index].pc));
-	 bq.bq[pred_tag].taken = taken;
-	 bq.bq[pred_tag].next_pc = PAY->buf[index].next_pc;
+         // Record the prediction.
+         taken = (PAY->buf[index].next_pc != INCREMENT_PC(PAY->buf[index].pc));
+         bq.bq[pred_tag].taken = taken;
+         bq.bq[pred_tag].next_pc = PAY->buf[index].next_pc;
 
-	 //////////////////////////////////////////////
-	 // Log the branch in the predictors' logs.
-	 //////////////////////////////////////////////
+         //////////////////////////////////////////////
+         // Log the branch in the predictors' logs.
+         //////////////////////////////////////////////
 
-	 CBP->log_branch(pred_tag, bq.bq[pred_tag].branch_type, taken, bq.bq[pred_tag].fetch_pc, bq.bq[pred_tag].next_pc);
-	 IBP->log_branch(pred_tag, bq.bq[pred_tag].branch_type, taken, bq.bq[pred_tag].fetch_pc, bq.bq[pred_tag].next_pc);
-	 RBP->log_branch(pred_tag, bq.bq[pred_tag].branch_type, taken, bq.bq[pred_tag].fetch_pc, bq.bq[pred_tag].next_pc);
+         CBP->log_branch(pred_tag, bq.bq[pred_tag].branch_type, taken, bq.bq[pred_tag].fetch_pc, bq.bq[pred_tag].next_pc);
+         IBP->log_branch(pred_tag, bq.bq[pred_tag].branch_type, taken, bq.bq[pred_tag].fetch_pc, bq.bq[pred_tag].next_pc);
+         RBP->log_branch(pred_tag, bq.bq[pred_tag].branch_type, taken, bq.bq[pred_tag].fetch_pc, bq.bq[pred_tag].next_pc);
       }
 
       // Go to next instruction in the fetch bundle.

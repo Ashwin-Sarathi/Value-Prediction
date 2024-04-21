@@ -93,6 +93,9 @@ typedef struct {
    // Set by Fetch2 Stage.
    ////////////////////////
 
+   bool vp_imm_rec_eligible;    // If true, the instruction is eligible to be checkpointed 
+                                // for immediate recovery from value misprediction
+
    unsigned int pred_tag;       // If the instruction is a branch, this is its
                                 // index into the Fetch Unit's branch queue.
 

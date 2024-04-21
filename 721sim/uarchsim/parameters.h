@@ -19,6 +19,7 @@ extern unsigned int PIPE_QUEUE_SIZE;
 // Value Prediction
 extern bool VALUE_PREDICTION_ENABLED;
 extern bool PERFECT_VALUE_PREDICTION;
+extern bool IMMEDIATE_VALUE_PREDICTION_RECOVERY;
 
 // SVP Configurations
 extern int vpq_size;
@@ -34,6 +35,8 @@ extern bool svp_predict_int_alu;
 extern bool svp_predict_fp_alu;
 extern bool svp_predict_load;
 extern bool vpq_full_policy;
+
+extern int svp_conf_imm_rec;
 
 // Oracle controls.
 extern bool PERFECT_BRANCH_PRED;

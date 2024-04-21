@@ -34,6 +34,7 @@ static void help()
   fprintf(stderr, "  --cp=<n>           <n> branch checkpoints for mispredict recovery\n");
   fprintf(stderr, "  --vp-enable=<n>     Enable/disable value prediction with 1 or 0\n");
   fprintf(stderr, "  --vp-perf=<n>       Turn on or off perfect value prediction with 1 or 0\n");
+  fprintf(stderr, "  --vp-imm=<n>        Turn on or off immediate value prediction recovery with 1 or 0\n");
 
   fprintf(stderr, "  --bq=<n>           Branch queue (all branches b/w fetch and retire) has <n> entries\n");
   fprintf(stderr, "  --btbentries=<n>   BTB has a total of <n> entries\n");
@@ -178,6 +179,18 @@ static void set_perfect_value_prediction(const char* config) {
    }
    else {
       PERFECT_VALUE_PREDICTION = (pvp ? true : false);
+   }
+}
+
+static void set_immediate_value_prediction_recovery(const char* config) {
+   uint64_t imm_rec;
+   if (sscanf(config, "%lu,%d", &imm_rec, &svp_conf_imm_rec) != 2) {
+      fprintf(stderr, "Incorrect configuration of --vp-imm\n");
+      fprintf(stderr, "Format: -vp-imm=<imm_rec_mode>,<conf_imm_rec>\n");
+      exit(-1);
+   }
+   else {
+      IMMEDIATE_VALUE_PREDICTION_RECOVERY = (imm_rec ? true : false);
    }
 }
 
@@ -425,7 +438,8 @@ int main(int argc, char** argv)
   parser.option(0, "perf", 1, [&](const char* s){set_perfect_flags(s);});
   parser.option(0, "vp-enable", 1, [&](const char* s){enable_value_prediction(s);});
   parser.option(0, "vp-perf", 1, [&](const char* s){set_perfect_value_prediction(s);});
-  parser.option(0, "vp-svp", 1, [&](const char* s){ set_svp_flags(s);});
+  parser.option(0, "vp-svp", 1, [&](const char* s){set_svp_flags(s);});
+  parser.option(0, "vp-imm", 1, [&](const char* s){set_immediate_value_prediction_recovery(s);});
   parser.option(0, "cp"  , 1, [&](const char* s){NUM_CHECKPOINTS = atoi(s);});
 
   parser.option(0, "bq", 1, [&](const char* s){BQ_SIZE = atoi(s); AUTO_BQ_SIZE = false;});
@@ -493,8 +507,8 @@ int main(int argc, char** argv)
 
   /* opening banner */
 //   Testing command line arguments:   
-//   printf("VALUE PREDICTION ENABLED = %lu\n", VALUE_PREDICTION_ENABLED);
-   //   printf("vpq size = %d\n", vpq_size);
+   // printf("IMMEDIATE VALUE PREDICTION RECOVERY ENABLED = %lu\n", IMMEDIATE_VALUE_PREDICTION_RECOVERY);
+   // printf("Recovery conf threshold = %d\n", svp_conf_imm_rec);
    //   printf("svp_index_bits = %d\n", svp_index_bits);
    //   printf("svp_predict_load = %d\n", svp_predict_load);
 

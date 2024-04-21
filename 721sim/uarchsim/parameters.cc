@@ -27,12 +27,15 @@ bool svp_predict_fp_alu = 0;
 bool svp_predict_load = 0;
 bool vpq_full_policy = 0;
 
+int svp_conf_imm_rec = 0;
+
 // Pipe control
 uint32_t PIPE_QUEUE_SIZE  = 8192;
 
 // Value Prediction
 bool VALUE_PREDICTION_ENABLED = false;
 bool PERFECT_VALUE_PREDICTION = false;
+bool IMMEDIATE_VALUE_PREDICTION_RECOVERY = false;
 
 // Oracle controls.
 bool PERFECT_BRANCH_PRED	    = false;
