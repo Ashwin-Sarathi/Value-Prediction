@@ -62,6 +62,7 @@ class svp_vpq {
         void getTailForCheckpoint(uint64_t &tail, bool &tail_phase_bit);
         void addComputedValueToVPQ(unsigned int vpq_index, uint64_t computed_value);
         uint64_t getComputedValue(uint64_t pc);
+        void getHeadAtRetire(uint64_t &pc, uint64_t &value);
         void printVPQStatus();  
 
         // Functions to manage VPU rollback

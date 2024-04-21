@@ -123,18 +123,22 @@ void pipeline_t::retire(size_t& instret) {
 
          if (PAY.buf[PAY.head].vp_unconfident) {
             if (PAY.buf[PAY.head].vp_correct) {
-               vpmeas_unconf_corr++;               
+               vpmeas_unconf_corr ++;
             }
             else if (PAY.buf[PAY.head].vp_incorrect) {
-               vpmeas_unconf_incorr++;
-               
+               vpmeas_unconf_incorr ++;
             }
          }
          
+         // cout << "RETIRE CALLED" << endl;
          if (VALUE_PREDICTION_ENABLED && !PERFECT_VALUE_PREDICTION && (PAY.buf[PAY.head].vp_eligible || PAY.buf[PAY.head].vp_miss)) {
-            uint64_t computed_value_vpq;
-            computed_value_vpq = VPU.getComputedValue(PAY.buf[PAY.head].vpq_index);
-            VPU.trainOrReplace(PAY.buf[PAY.head].pc, computed_value_vpq);
+            uint64_t vpq_head_pc;
+            uint64_t vpq_head_computed_value;
+            VPU.getHeadAtRetire(vpq_head_pc, vpq_head_computed_value);
+            VPU.trainOrReplace(vpq_head_pc, vpq_head_computed_value);
+            // computed_value_vpq = VPU.getComputedValue(PAY.buf[PAY.head].vpq_index);
+            // VPU.trainOrReplace(PAY.buf[PAY.head].pc, vpq_computed_value);
+            // cout << "DEQUEUED: " << test_counter << endl;
          }
 
          REN->commit(); 

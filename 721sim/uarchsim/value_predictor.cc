@@ -236,6 +236,11 @@ uint64_t svp_vpq::getComputedValue(uint64_t index) {
     return vpq_queue[index].computed_value; 
 }
 
+void svp_vpq::getHeadAtRetire(uint64_t &pc, uint64_t &value) {
+    pc = vpq_queue[vpq_head].pc;
+    value = vpq_queue[vpq_head].computed_value;
+}
+
 void svp_vpq::printVPQStatus() {
 
     fprintf(stdout, "VPQ State:\n");
@@ -325,12 +330,12 @@ int svp_vpq::getRealPrediction(uint64_t pc, uint64_t& predicted_value) {
     uint64_t index = extractIndex(pc);
 
         if (svp_table[index].tag == tag) {
-            svp_table[index].instance++;            // Increment the instance counter
+            svp_table[index].instance ++;            // Increment the instance counter
             if (svp_table[index].confidence == svp_conf_max) {
                 predicted_value = svp_table[index].last_value + (svp_table[index].stride * svp_table[index].instance);  
                 return 2;                            // Tag match and max confidence
-            }
-             predicted_value = svp_table[index].last_value + (svp_table[index].stride * svp_table[index].instance);                       
+            }        
+            predicted_value = svp_table[index].last_value + (svp_table[index].stride * svp_table[index].instance);           
             return 1;                                // Tag match but unconfident
         }
 
